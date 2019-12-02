@@ -4,10 +4,75 @@ import (
 	"testing"
 )
 
+func TestConnect(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		Dev:       true,
+		DbDialect: "sqlite3",
+		DbConnStr: ":memory:",
+	}
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+
+	connect()
+	if db == nil {
+		t.Errorf("connect() did not create DB")
+	}
+}
+
+func TestBootstrap(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		Dev:       true,
+		DbDialect: "sqlite3",
+		DbConnStr: ":memory:",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+
+	checkDb(t, 0, 0, 0)
+	bootstrap(false)
+	checkDb(t, 37, 13, 52)
+
+	db.Exec("insert into label values (40, 'florp')")
+	bootstrap(false)
+	checkDb(t, 38, 13, 52)
+	bootstrap(true)
+	checkDb(t, 37, 13, 52)
+}
+
+func checkDb(t *testing.T, expectedLabels int, expectedRecipes int, expectedRecipeLabels int) {
+	var (
+		numLabels       int
+		numRecipes      int
+		numRecipeLabels int
+	)
+
+	db.QueryRow("select count(*) from label").Scan(&numLabels)
+	db.QueryRow("select count(*) from recipe").Scan(&numRecipes)
+	db.QueryRow("select count(*) from recipe_label").Scan(&numRecipeLabels)
+	if numLabels != expectedLabels {
+		t.Errorf("Got %v labels, expected %v", numLabels, expectedLabels)
+	}
+	if numRecipes != expectedRecipes {
+		t.Errorf("Got %v recipes, expected %v", numRecipes, expectedRecipes)
+	}
+	if numRecipeLabels != expectedRecipeLabels {
+		t.Errorf("Got %v recipe-labels, expected %v", numRecipeLabels, expectedRecipeLabels)
+	}
+}
+
+/****
 // This assumes a DB is available and it's populated with the bootstrapping data
 func TestLoadRecipe(t *testing.T) {
 	t.Log("Testing recipeById")
-	expected_body := `2 cups flour
+	expectedBody := `2 cups flour
 1 T sugar
 1 t salt
 ½ cup shortening
@@ -113,3 +178,4 @@ func TestLoadLabel(t *testing.T) {
 		t.Errorf("Label does not match (got %d: expected %d)", label.id, expected.id)
 	}
 }
+****/
