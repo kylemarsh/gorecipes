@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type configuration struct {
@@ -31,7 +32,8 @@ func main() {
 	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
 	//router.HandleFunc("/recipes/{id}/labels", getLabelsForRecipe).Methods("GET")
 	//router.HandleFunc("/labels/{id}/recipes", getRecipesForLabel).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	handler := cors.Default().Handler(router)
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }
 
 func readConfiguration(c *configuration, configFilename string) error {
