@@ -17,6 +17,7 @@ type Recipe struct {
 	Body       string `db:"recipe_body"`
 	Time       int    `db:"total_time"`
 	ActiveTime int    `db:"active_time"`
+	Labels     []Label
 }
 
 //func (r Recipe) Save() error {
@@ -36,7 +37,7 @@ func (r Recipe) String() string {
 
 /*Label - a taxonomic tab for recipes */
 type Label struct {
-	id    int
+	ID    int `db:"label_id"`
 	Label string
 }
 
@@ -45,12 +46,17 @@ func (l Label) String() string {
 }
 
 /* Functions */
-func recipeByID(id int) (Recipe, error) {
+func recipeByID(id int, wantLabels bool) (Recipe, error) {
 	var recipe Recipe
+	var labels []Label
 	q := "SELECT * FROM recipe WHERE recipe_id = ?"
 
 	connect()
 	err := db.Get(&recipe, q, id)
+	if wantLabels == true && err == nil {
+		labels, err = labelsByRecipeID(id)
+		recipe.Labels = labels
+	}
 	return recipe, err
 }
 
@@ -63,6 +69,15 @@ func labelByID(id int) Label {
 		fmt.Println("Error finding label: ", err)
 	}
 	return label
+}
+
+func labelsByRecipeID(id int) ([]Label, error) {
+	var labels []Label
+	q := "SELECT label.* FROM label join recipe_label using(label_id) WHERE recipe_id = ?"
+
+	connect()
+	err := db.Select(&labels, q, id)
+	return labels, err
 }
 
 func connect() {

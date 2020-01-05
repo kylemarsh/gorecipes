@@ -14,6 +14,7 @@ import (
 func getAllRecipes(w http.ResponseWriter, r *http.Request) {
 	var recipes []Recipe
 	q := "SELECT * FROM recipe"
+	//TODO: add labels
 	connect()
 	err := db.Select(&recipes, q)
 	if err != nil {
@@ -26,7 +27,7 @@ func getAllRecipes(w http.ResponseWriter, r *http.Request) {
 func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	if recipe, err := recipeByID(recipeID); err != nil {
+	if recipe, err := recipeByID(recipeID, true); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
@@ -54,7 +55,7 @@ func getAllLabels(w http.ResponseWriter, r *http.Request) {
 func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	if _, err := recipeByID(recipeID); err != nil {
+	if _, err := recipeByID(recipeID, false); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
@@ -65,15 +66,25 @@ func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	connect()
-	q := "DELETE FROM recipe WHERE recipe_id = ?"
-	if _, err := db.Exec(q, recipeID); err != nil {
+	qr := "DELETE FROM recipe WHERE recipe_id = ?"
+	ql := "DELETE FROM recipe_label WHERE recipe_id = ?"
+	if _, err := db.Exec(qr, recipeID); err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem deleting recipe", err)
+	}
+	if _, err := db.Exec(ql, recipeID); err != nil {
+		apiError(w, http.StatusInternalServerError, "Problem deleting recipe-label links", err)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func getLabelsForRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	labels, err := labelsByRecipeID(recipeID)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "Problem retrieving labels for recipe", err)
+	}
+	json.NewEncoder(w).Encode(labels)
 }
 
 func getRecipesForLabel(w http.ResponseWriter, r *http.Request) {
