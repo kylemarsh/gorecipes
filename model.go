@@ -20,14 +20,6 @@ type Recipe struct {
 	Labels     []Label
 }
 
-//func (r Recipe) Save() error {
-//panic("notimplemented")
-//}
-
-//func (r Recipe) Labels() []Label {
-//panic("notimplememnted")
-//}
-
 func (r Recipe) String() string {
 	if r.ActiveTime != 0 && r.Time != 0 {
 		return fmt.Sprintf("%s (%d min -- %d min active)", r.Title, r.Time, r.ActiveTime)
@@ -46,6 +38,20 @@ func (l Label) String() string {
 }
 
 /* Functions */
+func allRecipes(includeBody bool) ([]Recipe, error) {
+	var recipes []Recipe
+	var q string
+	if includeBody {
+		q = "SELECT * FROM recipe"
+	} else {
+		q = "SELECT recipe_id, title, total_time, active_time FROM recipe"
+	}
+	//TODO: add labels
+	connect()
+	err := db.Select(&recipes, q)
+	return recipes, err
+}
+
 func recipeByID(id int, wantLabels bool) (Recipe, error) {
 	var recipe Recipe
 	var labels []Label

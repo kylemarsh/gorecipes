@@ -12,11 +12,8 @@ import (
 )
 
 func getAllRecipes(w http.ResponseWriter, r *http.Request) {
-	var recipes []Recipe
-	q := "SELECT * FROM recipe"
-	//TODO: add labels
-	connect()
-	err := db.Select(&recipes, q)
+	recipes, err := allRecipes(true)
+
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem loading recipes", err)
 		return
@@ -37,18 +34,6 @@ func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(recipe)
 	}
-}
-
-func getAllLabels(w http.ResponseWriter, r *http.Request) {
-	var labels []Label
-	q := "SELECT * FROM label"
-	connect()
-	err := db.Select(&labels, q)
-	if err != nil {
-		apiError(w, http.StatusInternalServerError, "Problem loading labels", err)
-		return
-	}
-	json.NewEncoder(w).Encode(labels)
 }
 
 //TODO: Wrap in "recipeRequired" and "loginRequired" functions that handle boilerplate?
@@ -76,25 +61,4 @@ func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func getLabelsForRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
-	labels, err := labelsByRecipeID(recipeID)
-	if err != nil {
-		apiError(w, http.StatusInternalServerError, "Problem retrieving labels for recipe", err)
-	}
-	json.NewEncoder(w).Encode(labels)
-}
-
-func getRecipesForLabel(w http.ResponseWriter, r *http.Request) {
-}
-
-func apiError(w http.ResponseWriter, statusCode int, msg string, err error) {
-	w.WriteHeader(statusCode)
-	if conf.Debug {
-		fmt.Fprintln(w, msg, err)
-	} else {
-		fmt.Fprintln(w, msg)
-	}
 }
