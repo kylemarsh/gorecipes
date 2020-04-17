@@ -34,20 +34,41 @@ func main() {
 	// TODO: put privileged routes under subrouter with authRequired middleware
 	router := mux.NewRouter().StrictSlash(true)
 	//router.HandleFunc("/", home)
-	router.HandleFunc("/recipes/", getAllRecipes).Methods("GET")
-	router.HandleFunc("/recipelist/", getRecipeList).Methods("GET")
-	router.HandleFunc("/recipes/{id}", getRecipeByID).Methods("GET")
-	router.HandleFunc("/recipes/{id}", deleteRecipe).Methods("DELETE")
+	router.HandleFunc("/recipes/", getRecipeList).Methods("GET")
 	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
 	//router.HandleFunc("/recipes/{id}/labels", getLabelsForRecipe).Methods("GET")
 	//router.HandleFunc("/labels/{id}/recipes", getRecipesForLabel).Methods("GET")
+
+	privRouter := router.PathPrefix("/priv").Subrouter()
+	privRouter.Use(authRequired)
+	privRouter.HandleFunc("/recipes/", getAllRecipes).Methods("GET")
+	privRouter.HandleFunc("/recipe/{id}", getRecipeByID).Methods("GET")
+	privRouter.HandleFunc("/recipe/{id}", deleteRecipe).Methods("DELETE")
+	//privRouter.HandleFunc("/recipe/{id}", editRecipe).Methods("PUT")
+	//privRouter.HandleFunc("/recipe/", createNewRecipe).Methods("POST")
 
 	debugRouter := router.PathPrefix("/debug").Subrouter()
 	debugRouter.Use(debugRequired)
 	debugRouter.HandleFunc("/getToken/", jwtGenerate).Methods("GET")
 	debugRouter.HandleFunc("/checkToken/", jwtValidate).Methods("GET")
 
-	handler := cors.Default().Handler(router)
+	//handler := cors.AllowAll().Handler(router)
+	//handler := cors.Default().Handler(router)
+	var corsOptions cors.Options
+	if conf.Debug {
+		corsOptions = cors.Options{
+			AllowedHeaders: []string{"*"},
+		}
+	} else {
+		// FIXME:
+		// might also want AllowedMethods? (default is only GET/POST)
+		// https://github.com/rs/cors/blob/master/cors.go#L185
+		corsOptions = cors.Options{
+		//AllowedOrigin: []string{"api.recipelister.quixoticflame.net"},
+		}
+	}
+
+	handler := cors.New(corsOptions).Handler(router)
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
 
@@ -86,22 +107,30 @@ func initApp() {
 	}
 }
 
-func validJwt(r *http.Request) bool {
-	var header = r.Header.Get("x-access-token")
-	tokenString := strings.TrimSpace(header)
-	if tokenString == "" {
-		return false
-	}
+func authRequired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var header = r.Header.Get("x-access-token")
+		tokenString := strings.TrimSpace(header)
+		if tokenString == "" {
+			apiError(w, http.StatusUnauthorized, "missing auth token", nil)
+			return
+		}
 
-	tk, err := jwt.Parse(header, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil // FIXME get secret from config?
+		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return []byte("secret"), nil
+		})
+
+		var ErrTokenExpired = errors.New("Token is expired")
+		if err != nil {
+			if err == ErrTokenExpired {
+				apiError(w, http.StatusUnauthorized, "auth token expired; please log in again", err)
+			} else {
+				apiError(w, http.StatusBadRequest, "invalid auth token", err)
+			}
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
-
-	if err != nil || tk.Valid != true {
-		return false
-	}
-
-	return true
 }
 
 // Debug Mode Middleware -- prohibits accessing certain routes when debug mode is disabled
@@ -120,7 +149,7 @@ func jwtValidate(w http.ResponseWriter, r *http.Request) {
 	var header = r.Header.Get("x-access-token")
 	tokenString := strings.TrimSpace(header)
 	if tokenString == "" {
-		apiError(w, http.StatusUnauthorized, "missing auth token:", nil)
+		apiError(w, http.StatusUnauthorized, "missing auth token", nil)
 		return
 	}
 
@@ -131,9 +160,9 @@ func jwtValidate(w http.ResponseWriter, r *http.Request) {
 	var ErrTokenExpired = errors.New("Token is expired")
 	if err != nil {
 		if err == ErrTokenExpired {
-			apiError(w, http.StatusUnauthorized, "", err)
+			apiError(w, http.StatusUnauthorized, "auth token expired; please log in again", err)
 		} else {
-			apiError(w, http.StatusBadRequest, "could not parse token:", err)
+			apiError(w, http.StatusBadRequest, "invalid auth token", err)
 		}
 		return
 	}
