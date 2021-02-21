@@ -1,20 +1,32 @@
 # gorecipes
 :egg: Recipe Manager written in go (port of https://github.com/kylemarsh/recipelister)
 
+## Development
 To run local dev server:
 ```
 go build
 ./gorecipes --config mem.config --debug --bootstrap
 ```
-To make sample requests against local server:
-```
-// Unauthenticated GET:
-curl http://localhost:8080/recipes/
-// Get an signed JWT:
-curl http://localhost:8080/getToken/
-// Authenticated GET:
-curl -H "x-access-token: $TOKEN" http://localhost:8080/checkToken/
-// Authenticated DELETE:
-curl -X DELETE -H "x-access-token: $TOKEN" http://localhost:8080/checkToken/
-```
+## Configuration
+- **Debug**: enable debugging output, API commands, etc.
+- **DbDialect**: database type to use (`sqlite3` and `mysql`, for example)
+- **DbConnStr**: database connection string (filename or `:memory:` or sqlite; mysql host, db, etc. for mysql)
+- ***TODO* DbUser**: database username, if applicable
+- ***TODO* DbPass**: database password, if applicable
+- ***TODO* JwtSecret**: secret used to generate Json Web Tokens
 
+## API
+Example requests made with curl against development server (localhost:8080)
+
+### Unauthenticated Requests
+- List all recipes: `curl http://localhost:8080/recipes/`
+- List all labels: `curl http://localhost:8080/labels/`
+
+### Authenticated Requests
+- Get full recipe (single recipe): `curl -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID`
+- Delete recipe: `curl -X DELETE -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID`
+- Get full recipe (all recipes): `curl -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipes/`
+
+### Debugging Requests
+- Get a signed JWT: `curl http://localhost:8080/debug/getToken/`
+- Check JWT validity: `curl -H "x-access-token: $TOKEN" http://localhost:8080/debug/checkToken/`
