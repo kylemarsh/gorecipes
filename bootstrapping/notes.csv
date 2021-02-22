@@ -1,0 +1,4 @@
+"note_id";"recipe_id";"create_date";"note";"flagged"
+"1";"1";"2020-02-22 21:23:00";"Added a test note to a recipe";"0"
+"2";"4";"2020-02-02 21:23:00";"Flagged note";"1"
+"3";"1";"2020-02-21 21:23:00";"Second note on a recipe";"0"
