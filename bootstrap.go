@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -18,7 +19,11 @@ func bootstrap(force bool) {
 	}
 
 	fmt.Println("bootstrapping")
-	dir := "/Users/kylem/projects/gorecipes/bootstrapping/"
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dir := cwd + "/bootstrapping/" //This won't work if we put the binary somewhere other than the root of the project
 
 	var info = map[string]map[string]string{
 		"label": map[string]string{

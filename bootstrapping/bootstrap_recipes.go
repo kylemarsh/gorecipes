@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -33,7 +34,11 @@ func main() {
 
 func bootstrap() {
 	fmt.Println("bootstrapping")
-	dir := "/Users/kylem/projects/gorecipes/bootstrapping/"
+	dir, err := os.Getwd() //This won't work if we put the binary somewhere other than the root of the project
+	if err != nil {
+		log.Fatal(err)
+	}
+	dir += "/"
 
 	var info = map[string]map[string]string{
 		"label": map[string]string{
