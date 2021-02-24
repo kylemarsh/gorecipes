@@ -17,13 +17,20 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
-        
+
+    - run: go get -v github.com/dgrijalva/jwt-go
+    - run: go get -v github.com/go-sql-drive/mysql
+    - run: go get -v github.com/gorilla/mux
+    - run: go get -v github.com/jmoiron/sqlx
+    - run: go get -v github.com/mattn/go-sqlite3
+    - run: go get -v github.com/rs/cors
+
     - name: Build
       run: go build -v .
 
     - name: Test
       run: go test -v .
-  
+
 #  deploy:
 #    runs-on: ubuntu-latest
 #    needs: [build]
