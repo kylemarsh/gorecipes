@@ -10,10 +10,8 @@ go build
 ## Configuration
 - **Debug**: enable debugging output, API commands, etc.
 - **DbDialect**: database type to use (`sqlite3` and `mysql`, for example)
-- **DbConnStr**: database connection string (filename or `:memory:` or sqlite; mysql host, db, etc. for mysql)
-- ***TODO* DbUser**: database username, if applicable
-- ***TODO* DbPass**: database password, if applicable
-- ***TODO* JwtSecret**: secret used to generate Json Web Tokens
+- **DbDSN**: data source name for the db (filename or `:memory:` or sqlite; "user:password@host/db" for mysql...)
+- **JwtSecret**: secret used to generate Json Web Tokens
 
 ## API
 Example requests made with curl against development server (localhost:8080)

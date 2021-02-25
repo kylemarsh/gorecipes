@@ -18,12 +18,9 @@ import (
 
 type configuration struct {
 	Debug     bool
-	Dev       bool
 	DbDialect string
-	DbConnStr string
-	// TODO
-	// username/password
-	// JWT Signing secret
+	DbDSN     string
+	JwtSecret string
 }
 
 var conf configuration
@@ -117,7 +114,7 @@ func authRequired(next http.Handler) http.Handler {
 		}
 
 		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte("secret"), nil
+			return []byte(conf.JwtSecret), nil
 		})
 
 		var ErrTokenExpired = errors.New("Token is expired")
@@ -154,7 +151,7 @@ func jwtValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
+		return []byte(conf.JwtSecret), nil
 	})
 
 	var ErrTokenExpired = errors.New("Token is expired")
@@ -174,7 +171,7 @@ func jwtGenerate(w http.ResponseWriter, r *http.Request) {
 	// 1 month expiration. TODO Decide on final scheme?
 	claims := &jwt.StandardClaims{ExpiresAt: time.Now().Add(time.Hour * 24 * 30).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte("secret")) // FIXME get secret from config
+	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
 
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "could not sign token", err)
