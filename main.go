@@ -81,7 +81,7 @@ func readConfiguration(c *configuration, configFilename string) error {
 }
 
 func initApp() {
-	configFilename := flag.String("config", "dev.config", "config file to use")
+	configFilename := flag.String("config", "gorecipes.conf", "config file to use")
 	doBootstrap := flag.Bool("bootstrap", false, "bootstrap db  with tables and sample data")
 	force := flag.Bool("force", false, "force bootstrapping even if DB already exists")
 	debug := flag.Bool("debug", false, "produce debugging output")
@@ -96,6 +96,10 @@ func initApp() {
 	if conf.Debug {
 		fmt.Println("Loaded config:")
 		fmt.Println(conf)
+	}
+
+	if conf.JwtSecret == "" {
+		panic("JWT Secret is a required config")
 	}
 
 	connect()
