@@ -48,4 +48,4 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: killall gorecipes && screen /home/${{ secrets.REMOTE_USER }}/gorecipes/dist/gorecipes
+        script: killall gorecipes; killall screen; screen /home/${{ secrets.REMOTE_USER }}/gorecipes/dist/gorecipes /home/${{ secrets.REMOTE_USER }}/gorecipes/dist/gorecipes.conf
