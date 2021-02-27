@@ -1,4 +1,4 @@
-name: Go
+name: Deploy Gorecipe to Staging with Sqlite DB
 
 on:
   push:
@@ -15,17 +15,31 @@ jobs:
     environment: Dreamhost VPS Staging
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      uses: ./.github/workflows/build.yml
-    - name: Deploy to Staging VPS
 
-      #TODO: I actually want to copy the binary, config files, and the bootstrapping directories, specifically
-      #TODO: instead of including config files in the deploy, maybe write them using the env secrets here?
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Build
+      run:  make dist
+      env:
+        - DB_DSN: recipes_sqlite.db
+        - DEBUG: false
+        - DB_DIALECT: sqlite3
+        - JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+    - name: Bootstrap DB
+      run: make sqlite
+
+    - name: Deploy to Staging VPS
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
           ARGS: '-rltgoDzvO --delete'
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SOURCE: 'dist'
           TARGET: 'gorecipes'
+
       #TODO: define a "run server" action and use it here.
