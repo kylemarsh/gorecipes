@@ -24,10 +24,10 @@ jobs:
     - name: Build
       run:  make dist
       env:
-        - DB_DSN: recipes_sqlite.db
-        - DEBUG: false
-        - DB_DIALECT: sqlite3
-        - JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        DB_DSN: recipes_sqlite.db
+        DEBUG: false
+        DB_DIALECT: sqlite3
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     - name: Bootstrap DB
       run: make sqlite
