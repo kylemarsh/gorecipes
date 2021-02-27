@@ -42,4 +42,10 @@ jobs:
           SOURCE: 'dist'
           TARGET: 'gorecipes'
 
-      #TODO: define a "run server" action and use it here.
+    - name: Launch Gorecipe Daemon
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: killall gorecipes && /home/${{ secrets.REMOTE_USER }}/gorecipes/dist/gorecipes &
