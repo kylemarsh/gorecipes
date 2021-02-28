@@ -7,9 +7,9 @@ import (
 func TestConnect(t *testing.T) {
 	conf = configuration{
 		Debug:     false,
-		Dev:       true,
 		DbDialect: "sqlite3",
-		DbConnStr: ":memory:",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
 	}
 	if db != nil {
 		db.Close()
@@ -25,9 +25,9 @@ func TestConnect(t *testing.T) {
 func TestBootstrap(t *testing.T) {
 	conf = configuration{
 		Debug:     false,
-		Dev:       true,
 		DbDialect: "sqlite3",
-		DbConnStr: ":memory:",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
 	}
 
 	if db != nil {

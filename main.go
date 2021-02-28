@@ -18,12 +18,9 @@ import (
 
 type configuration struct {
 	Debug     bool
-	Dev       bool
 	DbDialect string
-	DbConnStr string
-	// TODO
-	// username/password
-	// JWT Signing secret
+	DbDSN     string
+	JwtSecret string
 }
 
 var conf configuration
@@ -84,7 +81,7 @@ func readConfiguration(c *configuration, configFilename string) error {
 }
 
 func initApp() {
-	configFilename := flag.String("config", "dev.config", "config file to use")
+	configFilename := flag.String("config", "gorecipes.conf", "config file to use")
 	doBootstrap := flag.Bool("bootstrap", false, "bootstrap db  with tables and sample data")
 	force := flag.Bool("force", false, "force bootstrapping even if DB already exists")
 	debug := flag.Bool("debug", false, "produce debugging output")
@@ -99,6 +96,10 @@ func initApp() {
 	if conf.Debug {
 		fmt.Println("Loaded config:")
 		fmt.Println(conf)
+	}
+
+	if conf.JwtSecret == "" {
+		panic("JWT Secret is a required config")
 	}
 
 	connect()
@@ -117,7 +118,7 @@ func authRequired(next http.Handler) http.Handler {
 		}
 
 		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte("secret"), nil
+			return []byte(conf.JwtSecret), nil
 		})
 
 		var ErrTokenExpired = errors.New("Token is expired")
@@ -154,7 +155,7 @@ func jwtValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
+		return []byte(conf.JwtSecret), nil
 	})
 
 	var ErrTokenExpired = errors.New("Token is expired")
@@ -174,7 +175,7 @@ func jwtGenerate(w http.ResponseWriter, r *http.Request) {
 	// 1 month expiration. TODO Decide on final scheme?
 	claims := &jwt.StandardClaims{ExpiresAt: time.Now().Add(time.Hour * 24 * 30).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte("secret")) // FIXME get secret from config
+	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
 
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "could not sign token", err)

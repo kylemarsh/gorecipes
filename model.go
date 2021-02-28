@@ -90,5 +90,5 @@ func connect() {
 	if db != nil {
 		return
 	}
-	db = sqlx.MustConnect(conf.DbDialect, conf.DbConnStr)
+	db = sqlx.MustConnect(conf.DbDialect, conf.DbDSN)
 }

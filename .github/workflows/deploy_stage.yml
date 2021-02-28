@@ -1,0 +1,51 @@
+name: Deploy Gorecipe to Staging with Sqlite DB
+
+on:
+  push:
+    branches:
+      - staging
+      - workflow_setup
+  pull_request:
+    branches: [ staging ]
+
+jobs:
+
+  deploy_staging:
+    runs-on: ubuntu-latest
+    environment: Dreamhost VPS Staging
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Build
+      run:  make dist
+      env:
+        DB_DSN: recipes_sqlite.db
+        DEBUG: false
+        DB_DIALECT: sqlite3
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+    - name: Bootstrap DB
+      run: make sqlite
+
+    - name: Deploy to Staging VPS
+      uses: easingthemes/ssh-deploy@v2.1.5
+      env:
+          ARGS: '-rltgoDzvO --delete'
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SOURCE: 'dist'
+          TARGET: 'gorecipes'
+
+    - name: Launch Gorecipe Daemon
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: killall gorecipes; killall screen; cd /home/${{ secrets.REMOTE_USER }}/gorecipes/dist/; screen -dm ./gorecipes --config gorecipes.conf
