@@ -28,9 +28,11 @@ var conf configuration
 func main() {
 	initApp()
 
-	// TODO: put privileged routes under subrouter with authRequired middleware
 	router := mux.NewRouter().StrictSlash(true)
 	//router.HandleFunc("/", home)
+	router.HandleFunc("/login/", login).Methods("POST")
+	router.HandleFunc("/logout/", login).Methods("POST")
+
 	router.HandleFunc("/recipes/", getRecipeList).Methods("GET")
 	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
 	//router.HandleFunc("/recipes/{id}/labels", getLabelsForRecipe).Methods("GET")
@@ -61,7 +63,7 @@ func main() {
 		// might also want AllowedMethods? (default is only GET/POST)
 		// https://github.com/rs/cors/blob/master/cors.go#L185
 		corsOptions = cors.Options{
-		//AllowedOrigin: []string{"api.recipelister.quixoticflame.net"},
+			//AllowedOrigin: []string{"api.recipelister.quixoticflame.net"},
 		}
 	}
 
