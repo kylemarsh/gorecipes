@@ -47,6 +47,7 @@ func main() {
 	debugRouter.Use(debugRequired)
 	debugRouter.HandleFunc("/getToken/", getJwt).Methods("GET")
 	debugRouter.HandleFunc("/checkToken/", validateJwt).Methods("GET")
+	debugRouter.HandleFunc("/hashPassword/", getHash).Methods("POST")
 
 	//handler := cors.AllowAll().Handler(router)
 	//handler := cors.Default().Handler(router)
@@ -142,6 +143,16 @@ func validateJwt(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusUnauthorized, "invalid auth token", err)
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func getHash(w http.ResponseWriter, r *http.Request) {
+
+	var password = r.FormValue("password")
+	hash, err := hashPassword(password)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "problem hashing password", err)
+	}
+	json.NewEncoder(w).Encode(map[string]interface{}{"hash": hash})
 }
 
 func getJwt(w http.ResponseWriter, r *http.Request) {

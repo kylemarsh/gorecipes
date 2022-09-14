@@ -1,3 +1,4 @@
-"user_id";"username";"plaintext_pw_fixme"
-"1";"koko";"cooking for mama"
-"2";"ashai";"sav'aaq"
+"user_id";"username";"password";"plaintext_pw_bootstrapping_only"
+"0";"foo";"$2a$04$QT4huVz9vGnC0cnHEd9C0uXS4/pgCyWC/whDhJocMmrc8S5xdhREG";"bar"
+"1";"koko";"$2a$04$yWPUU5NuHRztgahb.0YzmOxmvlD9dZgrMd0RDW/4Q2rJWtDlXTpfy";"cooking for mama"
+"2";"ashai";"$2a$04$d4/EUSoBbiR.1YAK5YRvnuTKq.vb2edXKAov72/YW.O0naOkzJUoa";"sav'aaq"

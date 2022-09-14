@@ -1,12 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var db *sqlx.DB
@@ -19,7 +19,8 @@ var db *sqlx.DB
 type User struct {
 	ID                int `db:"user_id"`
 	Username          string
-	PlaintextPassword string `db:"plaintext_pw_fixme"`
+	HashedPassword    string `db:"password"`
+	PlaintextPassword string `db:"plaintext_pw_bootstrapping_only"`
 }
 
 /*Recipe - basic unit of the recipe database */
@@ -112,11 +113,7 @@ func userByName(username string) (User, error) {
  * METHODS *
  ***********/
 func (u User) CheckPassword(cleartext string) error {
-	//TODO: use hashPassword to hash these
-	if cleartext == u.PlaintextPassword {
-		return nil
-	}
-	return errors.New("invalid login")
+	return bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(cleartext))
 }
 
 func connect() {
