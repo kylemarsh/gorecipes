@@ -41,6 +41,7 @@ Example requests made with curl against development server (localhost:8080)
 ### Unauthenticated Requests
 - List all recipes: `curl http://localhost:8080/recipes/`
 - List all labels: `curl http://localhost:8080/labels/`
+- Login: `curl -F"username=foo" -F"password=bar" http://localhost:8080/login/`
 
 ### Authenticated Requests
 - Get full recipe (single recipe): `curl -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID`
@@ -50,3 +51,4 @@ Example requests made with curl against development server (localhost:8080)
 ### Debugging Requests
 - Get a signed JWT: `curl http://localhost:8080/debug/getToken/`
 - Check JWT validity: `curl -H "x-access-token: $TOKEN" http://localhost:8080/debug/checkToken/`
+- Get the bcrypt hash of a plaintext password: `curl -F"password=bar" http://localhost:8080/debug/hashPassword/`
