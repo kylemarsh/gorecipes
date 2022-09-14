@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -31,7 +29,6 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	//router.HandleFunc("/", home)
 	router.HandleFunc("/login/", login).Methods("POST")
-	router.HandleFunc("/logout/", login).Methods("POST")
 
 	router.HandleFunc("/recipes/", getRecipeList).Methods("GET")
 	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
@@ -48,8 +45,8 @@ func main() {
 
 	debugRouter := router.PathPrefix("/debug").Subrouter()
 	debugRouter.Use(debugRequired)
-	debugRouter.HandleFunc("/getToken/", jwtGenerate).Methods("GET")
-	debugRouter.HandleFunc("/checkToken/", jwtValidate).Methods("GET")
+	debugRouter.HandleFunc("/getToken/", getJwt).Methods("GET")
+	debugRouter.HandleFunc("/checkToken/", validateJwt).Methods("GET")
 
 	//handler := cors.AllowAll().Handler(router)
 	//handler := cors.Default().Handler(router)
@@ -69,17 +66,6 @@ func main() {
 
 	handler := cors.New(corsOptions).Handler(router)
 	log.Fatal(http.ListenAndServe(":8080", handler))
-}
-
-func readConfiguration(c *configuration, configFilename string) error {
-	file, err := os.Open(configFilename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	decoder := json.NewDecoder(file)
-	return decoder.Decode(&c)
 }
 
 func initApp() {
@@ -147,46 +133,23 @@ func debugRequired(next http.Handler) http.Handler {
 	})
 }
 
-func jwtValidate(w http.ResponseWriter, r *http.Request) {
+func validateJwt(w http.ResponseWriter, r *http.Request) {
 
 	var header = r.Header.Get("x-access-token")
 	tokenString := strings.TrimSpace(header)
-	if tokenString == "" {
-		apiError(w, http.StatusUnauthorized, "missing auth token", nil)
-		return
-	}
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(conf.JwtSecret), nil
-	})
-
-	var ErrTokenExpired = errors.New("Token is expired")
+	err := jwtValidate(tokenString)
 	if err != nil {
-		if err == ErrTokenExpired {
-			apiError(w, http.StatusUnauthorized, "auth token expired; please log in again", err)
-		} else {
-			apiError(w, http.StatusBadRequest, "invalid auth token", err)
-		}
-		return
+		apiError(w, http.StatusUnauthorized, "invalid auth token", err)
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"parsedToken": token})
+	w.WriteHeader(http.StatusOK)
 }
 
-func jwtGenerate(w http.ResponseWriter, r *http.Request) {
-
-	// 1 month expiration. TODO Decide on final scheme?
-	claims := &jwt.StandardClaims{ExpiresAt: time.Now().Add(time.Hour * 24 * 30).Unix()}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
-
+func getJwt(w http.ResponseWriter, r *http.Request) {
+	tokenStr, err := jwtGenerate()
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "could not sign token", err)
 		return
 	}
-	fmt.Println("Token:")
-	fmt.Println(token)
-	fmt.Println(tokenStr)
-
 	json.NewEncoder(w).Encode(map[string]interface{}{"token": tokenStr})
 }
 
