@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func readConfiguration(c *configuration, configFilename string) error {
@@ -51,4 +52,10 @@ func jwtValidate(tokenString string) error {
 	})
 
 	return err
+}
+
+func hashPassword(password string) (string, error) {
+	var pwBytes = []byte(password)
+	hashedBytes, err := bcrypt.GenerateFromPassword(pwBytes, bcrypt.MinCost)
+	return string(hashedBytes), err
 }
