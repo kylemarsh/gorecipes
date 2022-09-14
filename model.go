@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -9,6 +10,17 @@ import (
 )
 
 var db *sqlx.DB
+
+/*********
+ * TYPES *
+ *********/
+
+/*User - notion of who can see the recipes*/
+type User struct {
+	ID                int `db:"user_id"`
+	Username          string
+	PlaintextPassword string `db:"plaintext_pw_fixme"`
+}
 
 /*Recipe - basic unit of the recipe database */
 type Recipe struct {
@@ -37,7 +49,9 @@ func (l Label) String() string {
 	return fmt.Sprintf("%s", l.Label)
 }
 
-/* Functions */
+/*************
+ * FUNCTIONS *
+ *************/
 func allRecipes(includeBody bool) ([]Recipe, error) {
 	var recipes []Recipe
 	var q string
@@ -84,6 +98,25 @@ func labelsByRecipeID(id int) ([]Label, error) {
 	connect()
 	err := db.Select(&labels, q, id)
 	return labels, err
+}
+
+func userByName(username string) (User, error) {
+	var user User
+	q := "SELECT * FROM user WHERE username = ?"
+	connect()
+	err := db.Get(&user, q, username)
+	return user, err
+}
+
+/***********
+ * METHODS *
+ ***********/
+func (u User) CheckPassword(cleartext string) error {
+	//TODO: use hashPassword to hash these
+	if cleartext == u.PlaintextPassword {
+		return nil
+	}
+	return errors.New("invalid login")
 }
 
 func connect() {

@@ -47,11 +47,14 @@ func login(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	//TODO
-	loginValid := username != "" && password != ""
-
-	if !loginValid {
-		apiError(w, http.StatusForbidden, "login invalid", nil)
+	user, err := userByName(username)
+	if err != nil {
+		apiError(w, http.StatusForbidden, "login invalid", err)
+		return
+	}
+	err = user.CheckPassword(password)
+	if err != nil {
+		apiError(w, http.StatusForbidden, "login invalid", err)
 		return
 	}
 
