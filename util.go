@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
