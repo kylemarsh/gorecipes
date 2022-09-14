@@ -41,33 +41,40 @@ func bootstrap() {
 	dir += "/"
 
 	var info = map[string]map[string]string{
-		"label": map[string]string{
-			"filename":     dir + "labels.csv",
-			"drop":         "DROP TABLE IF EXISTS label",
-			"createMySQL":  "CREATE TABLE `label` ( `label_id` int(11) NOT NULL auto_increment, `label` varchar(255) NOT NULL, PRIMARY KEY  (`label_id`), KEY `label` (`label`))",
-			"createSQLITE": "CREATE TABLE `label` ( `label_id` INTEGER PRIMARY KEY, `label` varchar(255) NOT NULL)",
-			"insert":       "INSERT INTO label (label_id, label) VALUES (?, ?)",
+		"label": {
+			"filename":       dir + "labels.csv",
+			"drop":           "DROP TABLE IF EXISTS label",
+			"create_mysql":   "CREATE TABLE `label` ( `label_id` int(11) NOT NULL auto_increment, `label` varchar(255) NOT NULL, PRIMARY KEY  (`label_id`), KEY `label` (`label`))",
+			"create_sqlite3": "CREATE TABLE `label` ( `label_id` INTEGER PRIMARY KEY, `label` varchar(255) NOT NULL)",
+			"insert":         "INSERT INTO label (label_id, label) VALUES (?, ?)",
 		},
-		"recipe": map[string]string{
-			"filename":     dir + "recipes.csv",
-			"drop":         "DROP TABLE IF EXISTS recipe",
-			"createMySQL":  "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
-			"createSQLITE": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL)",
-			"insert":       "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time) VALUES (?, ?, ?, ?, ?)",
+		"recipe": {
+			"filename":       dir + "recipes.csv",
+			"drop":           "DROP TABLE IF EXISTS recipe",
+			"create_mysql":   "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
+			"create_sqlite3": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL)",
+			"insert":         "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time) VALUES (?, ?, ?, ?, ?)",
 		},
-		"recipe_label": map[string]string{
-			"filename":     dir + "recipe-label.csv",
-			"drop":         "DROP TABLE IF EXISTS recipe_label",
-			"createMySQL":  "CREATE TABLE `recipe_label` ( `recipe_id` bigint(20) NOT NULL, `label_id` int(11) NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
-			"createSQLITE": "CREATE TABLE `recipe_label` ( `recipe_id` bigint NOT NULL, `label_id` int NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
-			"insert":       "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)",
+		"recipe_label": {
+			"filename":       dir + "recipe-label.csv",
+			"drop":           "DROP TABLE IF EXISTS recipe_label",
+			"create_mysql":   "CREATE TABLE `recipe_label` ( `recipe_id` bigint(20) NOT NULL, `label_id` int(11) NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
+			"create_sqlite3": "CREATE TABLE `recipe_label` ( `recipe_id` bigint NOT NULL, `label_id` int NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
+			"insert":         "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)",
 		},
-		"notes": map[string]string{
-			"filename":     dir + "notes.csv",
-			"drop":         "DROP TABLE IF EXISTS notes",
-			"createMySQL":  "CREATE TABLE `notes` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
-			"createSQLITE": "CREATE TABLE `notes` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` int NOT NULL, `create_date` int NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean DEFAULT FALSE)",
-			"insert":       "INSERT INTO notes (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
+		"notes": {
+			"filename":       dir + "notes.csv",
+			"drop":           "DROP TABLE IF EXISTS notes",
+			"create_mysql":   "CREATE TABLE `notes` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
+			"create_sqlite3": "CREATE TABLE `notes` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` int NOT NULL, `create_date` int NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean DEFAULT FALSE)",
+			"insert":         "INSERT INTO notes (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
+		},
+		"user": {
+			"filename":       dir + "users.csv",
+			"drop":           "DROP TABLE IF EXISTS user",
+			"create_mysql":   "CREATE TABLE `user` ( `user_id` bigint(20) NOT NULL AUTO_INCREMENT, `username` varchar(63) NOT NULL, `plaintext_pw_fixme` varchar(255) NOT NULL, PRIMARY KEY (`user_id`), KEY `username` (`username`))",
+			"create_sqlite3": "CREATE TABLE `user` ( `user_id` INTEGER PRIMARY KEY, `username` varchar(63) NOT NULL, `plaintext_pw_fixme` varchar(255) NOT NULL)",
+			"insert":         "INSERT INTO user (user_id, username, plaintext_pw_fixme) VALUES (?, ?, ?)",
 		},
 	}
 	tx, err := conn.Begin()
@@ -87,6 +94,9 @@ func bootstrap() {
 	fmt.Println("Initializing Notes")
 	initializeTable(tx, info["notes"])
 
+	fmt.Println("Initializing Users")
+	initializeTable(tx, info["user"])
+
 	tx.Commit()
 }
 
@@ -95,7 +105,7 @@ func initializeTable(tx *sql.Tx, info map[string]string) {
 		fmt.Println("Error dropping: ", err)
 	}
 	//FIXME config
-	if _, err := tx.Exec(info["createSQLITE"]); err != nil {
+	if _, err := tx.Exec(info["create_sqlite3"]); err != nil {
 		fmt.Println("Error creating: ", err)
 	}
 
