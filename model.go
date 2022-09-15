@@ -64,8 +64,22 @@ func allRecipes(includeBody bool) ([]Recipe, error) {
 	}
 	connect()
 	err := db.Select(&recipes, q)
+	if err != nil {
+		return recipes, err
+	}
+
+	var savedErr error
 	//TODO load in labels for each recipe
-	return recipes, err
+	for i, recipe := range recipes {
+		labels, err := labelsByRecipeID(recipe.ID)
+		if err != nil {
+			savedErr = err
+			fmt.Println("error loading labels for recipe", recipe.ID, err)
+		}
+		recipe.Labels = labels
+		recipes[i] = recipe
+	}
+	return recipes, savedErr
 }
 
 func recipeByID(id int, wantLabels bool) (Recipe, error) {
