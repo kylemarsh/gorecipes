@@ -116,14 +116,9 @@ func labelsByRecipeID(id int) ([]Label, error) {
 	return labels, err
 }
 
-func notesByRecipeID(recipe_id int, flagged_only bool) ([]Note, error) {
+func notesByRecipeID(recipe_id int) ([]Note, error) {
 	var notes []Note
-	var q string
-	if flagged_only {
-		q = "SELECT * FROM note WHERE recipe_id = ? and flagged = 1"
-	} else {
-		q = "SELECT * FROM note WHERE recipe_id = ?"
-	}
+	q := "SELECT * FROM note WHERE recipe_id = ?"
 
 	connect()
 	err := db.Select(&notes, q, recipe_id)

@@ -42,11 +42,10 @@ func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 
 func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
-	flaggedOnly, _ := strconv.ParseBool(mux.Vars(r)["flagged"])
-	if notes, err := notesByRecipeID(recipeID, flaggedOnly); err != nil {
+	if notes, err := notesByRecipeID(recipeID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
+			fmt.Fprintf(w, "No notes for recipe with id=%v exists", recipeID)
 		} else {
 			apiError(w, http.StatusInternalServerError, "Problem loading notes", err)
 		}
