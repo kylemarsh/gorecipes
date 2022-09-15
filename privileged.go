@@ -11,6 +11,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//TODO: How can I do something like python decorators to wrap certain methods
+//    in `recipeRequired` or `accessibleToUser` code to minimize duplication?
+
+/* GET */
 func getAllRecipes(w http.ResponseWriter, r *http.Request) {
 	recipes, err := allRecipes(true)
 
@@ -36,7 +40,26 @@ func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//TODO: Wrap in "recipeRequired" and "loginRequired" functions that handle boilerplate?
+func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	flaggedOnly, _ := strconv.ParseBool(mux.Vars(r)["flagged"])
+	if notes, err := notesByRecipeID(recipeID, flaggedOnly); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
+		} else {
+			apiError(w, http.StatusInternalServerError, "Problem loading notes", err)
+		}
+	} else {
+		json.NewEncoder(w).Encode(notes)
+	}
+}
+
+/* UPDATE */
+
+/* CREATE */
+
+/* DELETE */
 func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
 

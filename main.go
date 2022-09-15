@@ -32,14 +32,15 @@ func main() {
 
 	router.HandleFunc("/recipes/", getRecipeList).Methods("GET")
 	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
-	//router.HandleFunc("/recipes/{id}/labels", getLabelsForRecipe).Methods("GET")
+	router.HandleFunc("/recipe/{id}/labels/", getLabelsForRecipe).Methods("GET")
 	//router.HandleFunc("/labels/{id}/recipes", getRecipesForLabel).Methods("GET")
 
 	privRouter := router.PathPrefix("/priv").Subrouter()
 	privRouter.Use(authRequired)
 	privRouter.HandleFunc("/recipes/", getAllRecipes).Methods("GET")
-	privRouter.HandleFunc("/recipe/{id}", getRecipeByID).Methods("GET")
-	privRouter.HandleFunc("/recipe/{id}", deleteRecipe).Methods("DELETE")
+	privRouter.HandleFunc("/recipe/{id}/", getRecipeByID).Methods("GET")
+	privRouter.HandleFunc("/recipe/{id}/notes/{flagged}", getNotesForRecipe).Methods("GET")
+	privRouter.HandleFunc("/recipe/{id}/", deleteRecipe).Methods("DELETE")
 	//privRouter.HandleFunc("/recipe/{id}", editRecipe).Methods("PUT")
 	//privRouter.HandleFunc("/recipe/", createNewRecipe).Methods("POST")
 

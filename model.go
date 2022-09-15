@@ -31,13 +31,7 @@ type Recipe struct {
 	Time       int    `db:"total_time"`
 	ActiveTime int    `db:"active_time"`
 	Labels     []Label
-}
-
-func (r Recipe) String() string {
-	if r.ActiveTime != 0 && r.Time != 0 {
-		return fmt.Sprintf("%s (%d min -- %d min active)", r.Title, r.Time, r.ActiveTime)
-	}
-	return fmt.Sprintf("%s", r.Title)
+	Notes      []Note
 }
 
 /*Label - a taxonomic tab for recipes */
@@ -46,8 +40,13 @@ type Label struct {
 	Label string
 }
 
-func (l Label) String() string {
-	return fmt.Sprintf("%s", l.Label)
+/*Note - a note attached to a recipe */
+type Note struct {
+	ID       int `db:"note_id"`
+	RecipeId int `db:"recipe_id"`
+	Created  int `db:"create_date"`
+	Note     string
+	Flagged  bool
 }
 
 /*************
@@ -58,12 +57,14 @@ func allRecipes(includeBody bool) ([]Recipe, error) {
 	var q string
 	if includeBody {
 		q = "SELECT * FROM recipe"
+		// TODO can we populate the labels and recipes at the same time?
+		//q = "SELECT recipe.*, label.* FROM recipe join recipe_label using(recipe_id) join label using(label_id)"
 	} else {
 		q = "SELECT recipe_id, title, total_time, active_time FROM recipe"
 	}
-	//TODO: add labels
 	connect()
 	err := db.Select(&recipes, q)
+	//TODO load in labels for each recipe
 	return recipes, err
 }
 
@@ -101,12 +102,33 @@ func labelsByRecipeID(id int) ([]Label, error) {
 	return labels, err
 }
 
+func notesByRecipeID(recipe_id int, flagged_only bool) ([]Note, error) {
+	var notes []Note
+	var q string
+	if flagged_only {
+		q = "SELECT * FROM note WHERE recipe_id = ? and flagged = 1"
+	} else {
+		q = "SELECT * FROM note WHERE recipe_id = ?"
+	}
+
+	connect()
+	err := db.Select(&notes, q, recipe_id)
+	return notes, err
+}
+
 func userByName(username string) (User, error) {
 	var user User
 	q := "SELECT * FROM user WHERE username = ?"
 	connect()
 	err := db.Get(&user, q, username)
 	return user, err
+}
+
+func connect() {
+	if db != nil {
+		return
+	}
+	db = sqlx.MustConnect(conf.DbDialect, conf.DbDSN)
 }
 
 /***********
@@ -116,9 +138,13 @@ func (u User) CheckPassword(cleartext string) error {
 	return bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(cleartext))
 }
 
-func connect() {
-	if db != nil {
-		return
+func (r Recipe) String() string {
+	if r.ActiveTime != 0 && r.Time != 0 {
+		return fmt.Sprintf("%s (%d min -- %d min active)", r.Title, r.Time, r.ActiveTime)
 	}
-	db = sqlx.MustConnect(conf.DbDialect, conf.DbDSN)
+	return fmt.Sprintf("%s", r.Title)
+}
+
+func (l Label) String() string {
+	return fmt.Sprintf("%s", l.Label)
 }

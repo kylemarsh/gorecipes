@@ -47,12 +47,12 @@ func bootstrap(force bool) {
 			"create_sqlite3": "CREATE TABLE `recipe_label` ( `recipe_id` bigint NOT NULL, `label_id` int NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
 			"insert":         "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)",
 		},
-		"notes": {
+		"note": {
 			"filename":       dir + "notes.csv",
-			"drop":           "DROP TABLE IF EXISTS notes",
-			"create_mysql":   "CREATE TABLE `notes` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
-			"create_sqlite3": "CREATE TABLE `notes` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` int NOT NULL, `create_date` int NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean DEFAULT FALSE)",
-			"insert":         "INSERT INTO notes (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
+			"drop":           "DROP TABLE IF EXISTS note",
+			"create_mysql":   "CREATE TABLE `note` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` int NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
+			"create_sqlite3": "CREATE TABLE `note` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` int NOT NULL, `create_date` int NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean DEFAULT FALSE)",
+			"insert":         "INSERT INTO note (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
 		},
 		"user": {
 			"filename":       dir + "users.csv",
@@ -78,7 +78,7 @@ func bootstrap(force bool) {
 	initializeTable(tx, info["recipe_label"])
 
 	fmt.Println("Initializing Notes")
-	initializeTable(tx, info["notes"])
+	initializeTable(tx, info["note"])
 
 	fmt.Println("Initializing Users")
 	initializeTable(tx, info["user"])
