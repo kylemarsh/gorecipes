@@ -42,9 +42,9 @@ type Label struct {
 
 /*Note - a note attached to a recipe */
 type Note struct {
-	ID       int `db:"note_id"`
-	RecipeId int `db:"recipe_id"`
-	Created  int `db:"create_date"`
+	ID       int    `db:"note_id"`
+	RecipeId int    `db:"recipe_id"`
+	Created  string `db:"create_date"`
 	Note     string
 	Flagged  bool
 }
@@ -124,6 +124,15 @@ func labelsByRecipeID(id int) ([]Label, error) {
 	return labels, err
 }
 
+func getNoteByID(id int) (Note, error) {
+	note := Note{}
+	q := "SELECT * FROM note WHERE note_id = ?"
+
+	connect()
+	err := db.Get(&note, q, id)
+	return note, err
+}
+
 func notesByRecipeID(recipe_id int) ([]Note, error) {
 	var notes []Note
 	q := "SELECT * FROM note WHERE recipe_id = ?"
@@ -174,7 +183,47 @@ func createRecipeLabel(recipeID int, labelID int) error {
 	return err
 }
 
+func createNote(recipeID int, note string) (Note, error) {
+	var newNote Note
+	q := "INSERT INTO note (recipe_id, note) VALUES (?, ?)"
+	connect()
+	result, err := db.Exec(q, recipeID, note)
+	if err != nil {
+		return newNote, err
+	}
+	noteID, err := result.LastInsertId()
+	if err != nil {
+		return newNote, err
+	}
+	return getNoteByID(int(noteID))
+}
+
+// Edit //
+func setNoteFlag(noteID int, flag bool) error {
+	q := "UPDATE note SET flagged = ? WHERE note_id = ?"
+	connect()
+	_, err := db.Exec(q, flag, noteID)
+	return err
+}
+
+func setNoteText(noteID int, text string) error {
+	q := "UPDATE note SET note = ? WHERE note_id = ?"
+	connect()
+	_, err := db.Exec(q, text, noteID)
+	return err
+}
+
 // Delete //
+func deleteNote(noteID int) error {
+	q := "DELETE FROM note WHERE note_id = ?"
+	connect()
+	_, err := db.Exec(q, noteID)
+	if err == nil {
+		fmt.Printf("deleted note %d\n", noteID)
+	}
+	return err
+}
+
 func deleteRecipeLabel(recipeID int, labelID int) error {
 	q := "DELETE FROM recipe_label WHERE recipe_id = ? AND label_id = ?"
 	connect()

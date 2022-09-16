@@ -58,8 +58,72 @@ func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 /* UPDATE */
+func flagNote(w http.ResponseWriter, r *http.Request) {
+	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	if _, err := getNoteByID(noteID); err != nil {
+		apiError(w, http.StatusNotFound, "note does not exist", err)
+		return
+	}
+	if err := setNoteFlag(noteID, true); err != nil {
+		apiError(w, http.StatusInternalServerError, "problem flagging note", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func unFlagNote(w http.ResponseWriter, r *http.Request) {
+	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	if _, err := getNoteByID(noteID); err != nil {
+		apiError(w, http.StatusNotFound, "note does not exist", err)
+		return
+	}
+	if err := setNoteFlag(noteID, false); err != nil {
+		apiError(w, http.StatusInternalServerError, "problem flagging note", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func editNote(w http.ResponseWriter, r *http.Request) {
+	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteText := r.FormValue("text")
+
+	if _, err := getNoteByID(noteID); err != nil {
+		apiError(w, http.StatusNotFound, "note does not exist", err)
+		return
+	}
+	if err := setNoteText(noteID, noteText); err != nil {
+		apiError(w, http.StatusInternalServerError, "problem updating note", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
 
 /* CREATE */
+func createNoteOnRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteText := r.FormValue("text")
+
+	// Validate that the recipe exists
+	if _, err := recipeByID(recipeID, false); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			apiError(w, http.StatusNotFound, "recipe does not exist", err)
+		} else {
+			apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
+		}
+		return
+	}
+
+	note, err := createNote(recipeID, noteText)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "problem creating note", err)
+		return
+	}
+	json.NewEncoder(w).Encode(note)
+}
+
 func tagRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["recipe_id"])
 	labelID, _ := strconv.Atoi(mux.Vars(r)["label_id"])
@@ -151,6 +215,16 @@ func untagRecipe(w http.ResponseWriter, r *http.Request) {
 
 	if err := deleteRecipeLabel(recipeID, labelID); err != nil {
 		apiError(w, http.StatusInternalServerError, "problem deleting recipe-label link", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func removeNote(w http.ResponseWriter, r *http.Request) {
+	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	if err := deleteNote(noteID); err != nil {
+		apiError(w, http.StatusInternalServerError, "problem deleting note", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
