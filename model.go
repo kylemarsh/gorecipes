@@ -52,6 +52,7 @@ type Note struct {
 /*************
  * FUNCTIONS *
  *************/
+// Load //
 func allRecipes(includeBody bool) ([]Recipe, error) {
 	var recipes []Recipe
 	var q string
@@ -96,15 +97,13 @@ func recipeByID(id int, wantLabels bool) (Recipe, error) {
 	return recipe, err
 }
 
-func labelByID(id int) Label {
+func labelByID(id int) (Label, error) {
 	var label Label
 	q := "SELECT * FROM label WHERE label_id = ?"
 
 	connect()
-	if err := db.Get(&label, q, id); err != nil {
-		fmt.Println("Error finding label: ", err)
-	}
-	return label
+	err := db.Get(&label, q, id)
+	return label, err
 }
 
 func labelsByRecipeID(id int) ([]Label, error) {
@@ -133,6 +132,26 @@ func userByName(username string) (User, error) {
 	return user, err
 }
 
+func recipeLabelExists(recipeID int, labelID int) (bool, error) {
+	var exists []bool
+	q := "SELECT count(*) FROM recipe_label WHERE recipe_id = ? and label_id = ?"
+	connect()
+	err := db.Select(&exists, q, recipeID, labelID)
+	return exists[0], err
+}
+
+// Create //
+func createRecipeLabel(recipeID int, labelID int) error {
+	q := "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)"
+	connect()
+	_, err := db.Exec(q, recipeID, labelID)
+	if err == nil {
+		fmt.Printf("linked recipe %d to label %d\n", recipeID, labelID)
+	}
+	return err
+}
+
+// MISC //
 func connect() {
 	if db != nil {
 		return

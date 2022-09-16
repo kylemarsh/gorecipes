@@ -32,6 +32,7 @@ func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
+			return
 		} else {
 			apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
 		}
@@ -46,6 +47,7 @@ func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "No notes for recipe with id=%v exists", recipeID)
+			return
 		} else {
 			apiError(w, http.StatusInternalServerError, "Problem loading notes", err)
 		}
@@ -57,6 +59,48 @@ func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
 /* UPDATE */
 
 /* CREATE */
+func tagRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeID, _ := strconv.Atoi(mux.Vars(r)["recipe_id"])
+	labelID, _ := strconv.Atoi(mux.Vars(r)["label_id"])
+
+	// Make sure we have both recipe and label
+	if _, err := recipeByID(recipeID, false); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
+			return
+		} else {
+			apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
+			return
+		}
+	}
+	if _, err := labelByID(labelID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "No label with id=%v exists", labelID)
+			return
+		} else {
+			apiError(w, http.StatusInternalServerError, "Problem loading label", err)
+			return
+		}
+	}
+	linked, err := recipeLabelExists(recipeID, labelID)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "problem checking recipe-label link", err)
+		return
+	}
+
+	if linked {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	} else {
+		if err := createRecipeLabel(recipeID, labelID); err != nil {
+			apiError(w, http.StatusInternalServerError, "problem linking recipe to label", err)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusCreated)
+}
 
 /* DELETE */
 func deleteRecipe(w http.ResponseWriter, r *http.Request) {
