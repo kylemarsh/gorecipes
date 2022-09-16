@@ -128,3 +128,14 @@ func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func untagRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeID, _ := strconv.Atoi(mux.Vars(r)["recipe_id"])
+	labelID, _ := strconv.Atoi(mux.Vars(r)["label_id"])
+
+	if err := deleteRecipeLabel(recipeID, labelID); err != nil {
+		apiError(w, http.StatusInternalServerError, "problem deleting recipe-label link", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

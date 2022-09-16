@@ -151,6 +151,17 @@ func createRecipeLabel(recipeID int, labelID int) error {
 	return err
 }
 
+// Delete //
+func deleteRecipeLabel(recipeID int, labelID int) error {
+	q := "DELETE FROM recipe_label WHERE recipe_id = ? AND label_id = ?"
+	connect()
+	_, err := db.Exec(q, recipeID, labelID)
+	if err == nil {
+		fmt.Printf("unlinked label %d from recipe %d\n", labelID, recipeID)
+	}
+	return err
+}
+
 // MISC //
 func connect() {
 	if db != nil {

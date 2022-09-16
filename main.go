@@ -42,6 +42,7 @@ func main() {
 	privRouter.HandleFunc("/recipe/{id}/notes/", getNotesForRecipe).Methods("GET")
 	privRouter.HandleFunc("/recipe/{id}/", deleteRecipe).Methods("DELETE")
 	privRouter.HandleFunc("/recipe/{recipe_id}/label/{label_id}", tagRecipe).Methods("PUT")
+	privRouter.HandleFunc("/recipe/{recipe_id}/label/{label_id}", untagRecipe).Methods("DELETE")
 
 	//privRouter.HandleFunc("/recipe/{id}", editRecipe).Methods("PUT")
 	//privRouter.HandleFunc("/recipe/", createNewRecipe).Methods("POST")
