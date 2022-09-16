@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -42,9 +43,9 @@ type Label struct {
 
 /*Note - a note attached to a recipe */
 type Note struct {
-	ID       int    `db:"note_id"`
-	RecipeId int    `db:"recipe_id"`
-	Created  string `db:"create_date"`
+	ID       int `db:"note_id"`
+	RecipeId int `db:"recipe_id"`
+	Created  int `db:"create_date"`
 	Note     string
 	Flagged  bool
 }
@@ -184,16 +185,16 @@ func createRecipeLabel(recipeID int, labelID int) error {
 }
 
 func createNote(recipeID int, note string) (Note, error) {
-	var newNote Note
-	q := "INSERT INTO note (recipe_id, note) VALUES (?, ?)"
+	epoch := time.Now().Unix()
+	q := "INSERT INTO note (recipe_id, note, create_date) VALUES (?, ?, ?)"
 	connect()
-	result, err := db.Exec(q, recipeID, note)
+	result, err := db.Exec(q, recipeID, note, epoch)
 	if err != nil {
-		return newNote, err
+		return Note{}, err
 	}
 	noteID, err := result.LastInsertId()
 	if err != nil {
-		return newNote, err
+		return Note{}, err
 	}
 	return getNoteByID(int(noteID))
 }

@@ -50,8 +50,8 @@ func bootstrap(force bool) {
 		"note": {
 			"filename":       dir + "notes.csv",
 			"drop":           "DROP TABLE IF EXISTS note",
-			"create_mysql":   "CREATE TABLE `note` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean NOT NULL DEFAULT 1, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
-			"create_sqlite3": "CREATE TABLE `note` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` INTEGER NOT NULL, `create_date` TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, `note` text NOT NULL, `flagged` boolean DEFAULT TRUE)",
+			"create_mysql":   "CREATE TABLE `note` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` bigint(20) NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN NOT NULL DEFAULT 1, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
+			"create_sqlite3": "CREATE TABLE `note` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` INTEGER NOT NULL, `create_date` TEXT NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN DEFAULT TRUE)",
 			"insert":         "INSERT INTO note (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
 		},
 		"user": {
