@@ -106,6 +106,15 @@ func labelByID(id int) (Label, error) {
 	return label, err
 }
 
+func labelByName(name string) (Label, error) {
+	var label Label
+	q := "SELECT * FROM label WHERE label = ?"
+
+	connect()
+	err := db.Get(&label, q, name)
+	return label, err
+}
+
 func labelsByRecipeID(id int) ([]Label, error) {
 	var labels []Label
 	q := "SELECT label.* FROM label join recipe_label using(label_id) WHERE recipe_id = ?"
@@ -141,6 +150,20 @@ func recipeLabelExists(recipeID int, labelID int) (bool, error) {
 }
 
 // Create //
+func createLabel(labelName string) error {
+	// FIXME: Technically I should probably return the new label object so the
+	// client can keep track of it. We'll see what this actually looks like in
+	// the client
+	q := "INSERT INTO label (label) VALUES (?)"
+	connect()
+	res, err := db.Exec(q, labelName)
+	if err == nil {
+		labelID, _ := res.LastInsertId()
+		fmt.Printf("created new label %s(%d)\n", labelName, labelID)
+	}
+	return err
+}
+
 func createRecipeLabel(recipeID int, labelID int) error {
 	q := "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)"
 	connect()

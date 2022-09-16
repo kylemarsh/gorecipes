@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -102,17 +103,32 @@ func tagRecipe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func addLabel(w http.ResponseWriter, r *http.Request) {
+	labelName := strings.ToLower(mux.Vars(r)["label_name"])
+	_, err := labelByName(labelName)
+	if err == nil { // No error means the label alredy exists
+		w.WriteHeader(http.StatusNoContent)
+		return
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		// ErrNoRows means the label doesn't yet exist; anything else is actually an error
+		apiError(w, http.StatusInternalServerError, "problem checking label", err)
+		return
+	}
+	err = createLabel(labelName)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "problem creating label", err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
 /* DELETE */
 func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
 
-	if _, err := recipeByID(recipeID, false); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "No recipe with id=%v exists", recipeID)
-		} else {
-			apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
-		}
+	_, err := recipeByID(recipeID, false)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
 		return
 	}
 
