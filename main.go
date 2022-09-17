@@ -64,6 +64,7 @@ func main() {
 	if conf.Debug {
 		corsOptions = cors.Options{
 			AllowedHeaders: []string{"*"},
+			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		}
 	} else {
 		// FIXME:
