@@ -111,6 +111,7 @@ func createNoteOnRecipe(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			apiError(w, http.StatusNotFound, "recipe does not exist", err)
 		} else {
+
 			apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
 		}
 		return
@@ -169,21 +170,23 @@ func tagRecipe(w http.ResponseWriter, r *http.Request) {
 
 func addLabel(w http.ResponseWriter, r *http.Request) {
 	labelName := strings.ToLower(mux.Vars(r)["label_name"])
-	_, err := labelByName(labelName)
+	label, err := labelByName(labelName)
 	if err == nil { // No error means the label alredy exists
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(label)
 		return
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		// ErrNoRows means the label doesn't yet exist; anything else is actually an error
 		apiError(w, http.StatusInternalServerError, "problem checking label", err)
 		return
 	}
-	err = createLabel(labelName)
+	label, err = createLabel(labelName)
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "problem creating label", err)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(label)
 }
 
 /* DELETE */

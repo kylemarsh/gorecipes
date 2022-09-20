@@ -160,18 +160,19 @@ func recipeLabelExists(recipeID int, labelID int) (bool, error) {
 }
 
 // Create //
-func createLabel(labelName string) error {
-	// FIXME: Technically I should probably return the new label object so the
-	// client can keep track of it. We'll see what this actually looks like in
-	// the client
+func createLabel(labelName string) (Label, error) {
 	q := "INSERT INTO label (label) VALUES (?)"
 	connect()
-	res, err := db.Exec(q, labelName)
-	if err == nil {
-		labelID, _ := res.LastInsertId()
-		fmt.Printf("created new label %s(%d)\n", labelName, labelID)
+	_, err := db.Exec(q, labelName)
+	if err != nil {
+		return Label{}, err
 	}
-	return err
+	label, err := labelByName(labelName)
+	if err != nil {
+		return Label{}, err
+	}
+	fmt.Printf("created new label %s(%d)\n", label.Label, label.ID)
+	return label, nil
 }
 
 func createRecipeLabel(recipeID int, labelID int) error {
