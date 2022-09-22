@@ -1,4 +1,4 @@
-"recipe_id";"title";"recipe_body";"total_time";"active_time"
+"recipe_id";"title";"recipe_body";"total_time";"active_time";"deleted"
 "1";"Beef Turnover";"2 cups flour
 1 T sugar
 1 t salt
@@ -29,7 +29,7 @@ Fold dough over filling, press edges with a fork to seal
 Prick tops with a fork
 Place on greased baking sheets
 Beat eggs with water, brush over turnovers
-Bake at 450 for 12-15 minutes or until lightly browned";0;0
+Bake at 450 for 12-15 minutes or until lightly browned";0;0;0
 "2";"Butternut Squash and Sage Wontons";"6 large garlic cloves, unpeeled
 4 sage leaves (2 whole, 2 minced)
 2 T plus 1 t olive oil
@@ -59,7 +59,7 @@ Arrange half the wontons in the basket, cover and steam for 5 minutes
 Transfer to a plate, repeat with remaining wontons
 Heat the remaining 1 T of oil
 Cook wontons over medium heat until crispy, about 2 minutes per side
-Transfer to a platter, sprinkle with cheese. serve";0;0
+Transfer to a platter, sprinkle with cheese. serve";0;0;0
 "3";"Cajun Shrimp Spread";"8 oz cream cheese, softened
 2/3 cup sour cram
 2/3 cup mayo
@@ -74,7 +74,7 @@ Dash hot pepper sauce
 Beat first six ingredients together until blended
 Stir in shrimp, spinach, and red pepper
 Sprinkle with green onions, chill until serving
-Serve with crackers";0;0
+Serve with crackers";0;0;0
 "4";"Cowboy Beef Dip";"1 lb ground beef
 4 T chopped onion
 3 T chopped red bell pepper
@@ -95,7 +95,7 @@ In a large skillet cook beef, 3 T onion, 2 T red pepper, and 1 T green pepper
 Drain, stir in soup, salsa, 3 T black olives, 3 T green, chilies, jalapeno, oregano, and pepper.
 Bring to a boil, reduce heat, simmer uncovered for 5 minutes
 Transfer to serving dish, top with cheese, sour cream, parsley, remaining onion, peppers, and 			olives
-Serve with tortilla chips";0;0
+Serve with tortilla chips";0;0;0
 "5";"Ground Turkey Laap";"1 T long grain white rice
 1 T vegetable oil
 1 lb ground turkey
@@ -120,7 +120,7 @@ Remove the meat and stir in the fish sauce
 Season with salt and pepper, and stir in the lime juice
 Let stand for 5 minutes, stir in the lemongrass, scallions, shallots, cilantro, mint, crushed red 			pepper, and rice powder
 Arrange the lettuce and lime wedges on a plate, and spoon turkey mix into lettuce
-";0;0
+";0;0;0
 "6";"Lumpia";"1 T vegetable oil
 1 pound ground pork
 6 cloves garlic, crushed
@@ -138,7 +138,7 @@ Stir fry pork in oil. Remove when no pink is showing
 Cook garlic and onion in pan for 2 minutes
 Stir in everything
 Use about 2 T filling per roll. Moisten edges with water to seal
-Fry 1-2 minutes until all sides golden grown";0;0
+Fry 1-2 minutes until all sides golden grown";0;0;0
 "7";"Mushroom tartlets";"1 sheet frozen puff pastry, thawed and cut into 2.5 inch rounds
 1 T olive oil
 1 large shallot, diced small
@@ -162,7 +162,7 @@ Run a small knife around edge of cup to loosen tartlets
 Scoop out each tart carefully with a spoon
 Sprinkle with more thyme, serve warm
 
-Or use grape tomatoes and cheddar cheese";0;0
+Or use grape tomatoes and cheddar cheese";0;0;0
 "8";"Mushrooms Stuffed with Prosciutto";"24 medium size mushrooms
 8 thin slices prosciutto, trimmed
 4 T butter
@@ -185,7 +185,7 @@ Grease a baking dish just large enough to hold the caps
 Stuff each mushroom with about 1 heaping t of the stuffing
 Put the caps in the baking dish, and bake until the tops are browned, about 20 and 25 minutes
 Remove and let cool
-Cut the remaining slices of prosciutto into 1/2” wide stipe, cut again, garnish the tops";0;0
+Cut the remaining slices of prosciutto into 1/2” wide stipe, cut again, garnish the tops";0;0;0
 "9";"Parmesan Tuiles with Heirloom Tomato Salad";"6 T finely grated parm
 1 ½ T unsalted butter
 2 T flour
@@ -205,7 +205,7 @@ Bake until golden brown and sizzling
 Let the tuiles cool completely
 Transfer to a towel lined plate and blot dry
 Toss tomatoes with chives, tarragon, olive oil, salt and pepper
-Spoon the salad over the tuiles and server right away";0;0
+Spoon the salad over the tuiles and server right away";0;0;0
 "10";"Steamed Pork Buns";"2 lb boneless pork loin roast
 ½ cup honey
 ¼ cup oyster sauce
@@ -261,7 +261,7 @@ put the bun, knot side up on parchment square and set aside
 put 4 buns on each steamer rack, spacing at least 2” apart
 steam buns until they look fluffy and have opened a bit to reveal filling, 15 to 20 minutes
 cooked buns with keep in an airtight container for 3 to 4 days
-";0;0
+";0;0;0
 "11";"Pot Stickers Veggie";"filling
 1 head napa cabbage, chopped
 1 red onion, chopped
@@ -278,7 +278,7 @@ or 2 T soy
 1 t white pepper
 ½ t salt
 ¼ cup chopped cilantro
-1 T sesame oil";0;0
+1 T sesame oil";0;0;0
 "12";"Pot Stickers";"dough
 7 ½ cups flour
 1 ½ t salt
@@ -303,7 +303,7 @@ or 2T soy
 Stir fry everything
 Mix dough, let sit in fridge for 30+ min
 Roll out, make dumplings
-Boil for eight to ten minutes";0;0
+Boil for eight to ten minutes";0;0;0
 "13";"Prosciutto Wrapped Dates";"3 T whole almonds, or slivered almonds
 3 T fresh chevre
 2 T gorgonzola dolce, or other creamy blue cheese
@@ -317,4 +317,4 @@ Fill each date with a t of the cheese mix
 Wrap each date in the prosciutto
 Cover and refrigerate up to 3 days in advance
 When ready to serve, preheat oven to 350 and place dates on baking sheet
-Warm until cheese melts and prosciutto starts to crisp, 5-7 minutes";0;0
+Warm until cheese melts and prosciutto starts to crisp, 5-7 minutes";0;0;0

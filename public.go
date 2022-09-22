@@ -9,7 +9,7 @@ import (
 )
 
 func getRecipeList(w http.ResponseWriter, r *http.Request) {
-	recipes, err := allRecipes(false)
+	recipes, err := activeRecipes(false)
 
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem loading recipes", err)

@@ -17,7 +17,7 @@ import (
 
 /* GET */
 func getAllRecipes(w http.ResponseWriter, r *http.Request) {
-	recipes, err := allRecipes(true)
+	recipes, err := activeRecipes(true)
 
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem loading recipes", err)
@@ -280,7 +280,7 @@ func addLabel(w http.ResponseWriter, r *http.Request) {
 }
 
 /* DELETE */
-func deleteRecipe(w http.ResponseWriter, r *http.Request) {
+func deleteRecipeHard(w http.ResponseWriter, r *http.Request) {
 	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
@@ -296,13 +296,48 @@ func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 	connect()
 	qr := "DELETE FROM recipe WHERE recipe_id = ?"
 	ql := "DELETE FROM recipe_label WHERE recipe_id = ?"
+	qn := "DELETE FROM note WHERE recipe_id = ?"
 	if _, err := db.Exec(qr, recipeID); err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem deleting recipe", err)
+		return
 	}
 	if _, err := db.Exec(ql, recipeID); err != nil {
 		apiError(w, http.StatusInternalServerError, "Problem deleting recipe-label links", err)
+		return
+	}
+	if _, err := db.Exec(qn, recipeID); err != nil {
+		apiError(w, http.StatusInternalServerError, "Problem deleting notes", err)
+		return
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func deleteRecipeSoft(w http.ResponseWriter, r *http.Request) {
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
+	err = softDeleteRecipe(recipeID)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "could not soft-delete recipe", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func recipeRestore(w http.ResponseWriter, r *http.Request) {
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
+	err = unDeleteRecipe(recipeID)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "could not un-delete recipe", err)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

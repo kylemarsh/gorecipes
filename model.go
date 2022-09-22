@@ -55,15 +55,15 @@ type Note struct {
  * FUNCTIONS *
  *************/
 // Load //
-func allRecipes(includeBody bool) ([]Recipe, error) {
+func activeRecipes(includeBody bool) ([]Recipe, error) {
 	var recipes []Recipe
 	var q string
 	if includeBody {
-		q = "SELECT * FROM recipe"
+		q = "SELECT * FROM recipe WHERE deleted = 0"
 		// TODO can we populate the labels and recipes at the same time?
 		//q = "SELECT recipe.*, label.* FROM recipe join recipe_label using(recipe_id) join label using(label_id)"
 	} else {
-		q = "SELECT recipe_id, title, total_time, active_time FROM recipe"
+		q = "SELECT recipe_id, title, total_time, active_time FROM recipe WHERE deleted = 0"
 	}
 	connect()
 	err := db.Select(&recipes, q)
@@ -217,7 +217,7 @@ func createNote(recipeID int, note string) (Note, error) {
 
 // Edit //
 func updateRecipe(recipeId int, title string, body string, activeTime int, totalTime int) error {
-	q := `UPDATE recipe set
+	q := `UPDATE recipe SET
 		title = ?,
 		recipe_body = ?,
 		active_time = ?,
@@ -239,6 +239,20 @@ func setNoteText(noteID int, text string) error {
 	q := "UPDATE note SET note = ? WHERE note_id = ?"
 	connect()
 	_, err := db.Exec(q, text, noteID)
+	return err
+}
+
+func softDeleteRecipe(recipeId int) error {
+	q := "UPDATE recipe SET deleted = 1 WHERE recipe_id = ?"
+	connect()
+	_, err := db.Exec(q, recipeId)
+	return err
+}
+
+func unDeleteRecipe(recipeId int) error {
+	q := "UPDATE recipe SET deleted = 0 WHERE recipe_id = ?"
+	connect()
+	_, err := db.Exec(q, recipeId)
 	return err
 }
 
