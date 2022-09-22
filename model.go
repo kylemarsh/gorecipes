@@ -31,6 +31,7 @@ type Recipe struct {
 	Body       string `db:"recipe_body"`
 	Time       int    `db:"total_time"`
 	ActiveTime int    `db:"active_time"`
+	Deleted    bool
 	Labels     []Label
 	Notes      []Note
 }
@@ -215,6 +216,18 @@ func createNote(recipeID int, note string) (Note, error) {
 }
 
 // Edit //
+func updateRecipe(recipeId int, title string, body string, activeTime int, totalTime int) error {
+	q := `UPDATE recipe set
+		title = ?,
+		recipe_body = ?,
+		active_time = ?,
+		total_time = ?
+		WHERE recipe_id = ?`
+	connect()
+	_, err := db.Exec(q, title, body, activeTime, totalTime, recipeId)
+	return err
+}
+
 func setNoteFlag(noteID int, flag bool) error {
 	q := "UPDATE note SET flagged = ? WHERE note_id = ?"
 	connect()

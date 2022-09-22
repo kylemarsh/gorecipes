@@ -27,7 +27,11 @@ func getAllRecipes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRecipeByID(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
 
 	if recipe, err := recipeByID(recipeID, true); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -43,7 +47,11 @@ func getRecipeByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
 	if notes, err := notesByRecipeID(recipeID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
@@ -58,8 +66,43 @@ func getNotesForRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 /* UPDATE */
+func updateExistingRecipe(w http.ResponseWriter, r *http.Request) {
+	recipeId, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
+	title := r.FormValue("title")
+	if title == "" {
+		apiError(w, http.StatusBadRequest, "title is required", nil)
+		return
+	}
+	activeTime, err := strconv.Atoi(r.FormValue("activeTime"))
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "activeTime must be an integer", err)
+		return
+	}
+	totalTime, err := strconv.Atoi(r.FormValue("totalTime"))
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "totalTime must be an integer", err)
+		return
+	}
+	body := r.FormValue("body")
+
+	err = updateRecipe(recipeId, title, body, activeTime, totalTime)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "could not create recipe", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func flagNote(w http.ResponseWriter, r *http.Request) {
-	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "note ID must be an integer", err)
+		return
+	}
 
 	if _, err := getNoteByID(noteID); err != nil {
 		apiError(w, http.StatusNotFound, "note does not exist", err)
@@ -73,7 +116,11 @@ func flagNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func unFlagNote(w http.ResponseWriter, r *http.Request) {
-	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "note ID must be an integer", err)
+		return
+	}
 
 	if _, err := getNoteByID(noteID); err != nil {
 		apiError(w, http.StatusNotFound, "note does not exist", err)
@@ -87,7 +134,11 @@ func unFlagNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func editNote(w http.ResponseWriter, r *http.Request) {
-	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "note ID must be an integer", err)
+		return
+	}
 	noteText := r.FormValue("text")
 
 	if _, err := getNoteByID(noteID); err != nil {
@@ -130,7 +181,11 @@ func createNewRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func createNoteOnRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
 	noteText := r.FormValue("text")
 
 	// Validate that the recipe exists
@@ -153,8 +208,16 @@ func createNoteOnRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func tagRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["recipe_id"])
-	labelID, _ := strconv.Atoi(mux.Vars(r)["label_id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["recipe_id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
+	labelID, err := strconv.Atoi(mux.Vars(r)["label_id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "label ID must be an integer", err)
+		return
+	}
 
 	// Make sure we have both recipe and label
 	if _, err := recipeByID(recipeID, false); err != nil {
@@ -218,9 +281,13 @@ func addLabel(w http.ResponseWriter, r *http.Request) {
 
 /* DELETE */
 func deleteRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
 
-	_, err := recipeByID(recipeID, false)
+	_, err = recipeByID(recipeID, false)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		apiError(w, http.StatusInternalServerError, "Problem loading recipe", err)
 		return
@@ -240,8 +307,16 @@ func deleteRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func untagRecipe(w http.ResponseWriter, r *http.Request) {
-	recipeID, _ := strconv.Atoi(mux.Vars(r)["recipe_id"])
-	labelID, _ := strconv.Atoi(mux.Vars(r)["label_id"])
+	recipeID, err := strconv.Atoi(mux.Vars(r)["recipe_id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "recipe ID must be an integer", err)
+		return
+	}
+	labelID, err := strconv.Atoi(mux.Vars(r)["label_id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "label ID must be an integer", err)
+		return
+	}
 
 	if err := deleteRecipeLabel(recipeID, labelID); err != nil {
 		apiError(w, http.StatusInternalServerError, "problem deleting recipe-label link", err)
@@ -251,7 +326,11 @@ func untagRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func removeNote(w http.ResponseWriter, r *http.Request) {
-	noteID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	noteID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "note ID must be an integer", err)
+		return
+	}
 
 	if err := deleteNote(noteID); err != nil {
 		apiError(w, http.StatusInternalServerError, "problem deleting note", err)
