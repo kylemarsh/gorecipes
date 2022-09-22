@@ -102,6 +102,33 @@ func editNote(w http.ResponseWriter, r *http.Request) {
 }
 
 /* CREATE */
+func createNewRecipe(w http.ResponseWriter, r *http.Request) {
+	title := r.FormValue("title")
+	if title == "" {
+		apiError(w, http.StatusBadRequest, "title is required", nil)
+		return
+	}
+	activeTime, err := strconv.Atoi(r.FormValue("activeTime"))
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "activeTime must be an integer", err)
+		return
+	}
+	totalTime, err := strconv.Atoi(r.FormValue("totalTime"))
+	if err != nil {
+		apiError(w, http.StatusBadRequest, "totalTime must be an integer", err)
+		return
+	}
+	body := r.FormValue("body")
+
+	recipe, err := createRecipe(title, body, activeTime, totalTime)
+	if err != nil {
+		apiError(w, http.StatusInternalServerError, "could not create recipe", err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(recipe)
+}
+
 func createNoteOnRecipe(w http.ResponseWriter, r *http.Request) {
 	recipeID, _ := strconv.Atoi(mux.Vars(r)["id"])
 	noteText := r.FormValue("text")

@@ -175,6 +175,20 @@ func createLabel(labelName string) (Label, error) {
 	return label, nil
 }
 
+func createRecipe(title string, body string, activeTime int, totalTime int) (Recipe, error) {
+	q := "INSERT INTO recipe (title, recipe_body, active_time, total_time) VALUES (?, ?, ?, ?)"
+	connect()
+	result, err := db.Exec(q, title, body, activeTime, totalTime)
+	if err != nil {
+		return Recipe{}, err
+	}
+	recipeID, err := result.LastInsertId()
+	if err != nil {
+		return Recipe{}, err
+	}
+	return recipeByID(int(recipeID), false)
+}
+
 func createRecipeLabel(recipeID int, labelID int) error {
 	q := "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)"
 	connect()
