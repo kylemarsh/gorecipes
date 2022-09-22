@@ -174,6 +174,10 @@ func getJwt(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiError(w http.ResponseWriter, statusCode int, msg string, err error) {
+	// Log the error
+	fmt.Println(msg, err)
+
+	// Write the error to the response
 	w.WriteHeader(statusCode)
 	if conf.Debug {
 		fmt.Fprintln(w, msg, err)
