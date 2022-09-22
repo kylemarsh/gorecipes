@@ -67,11 +67,10 @@ func main() {
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		}
 	} else {
-		// FIXME:
-		// might also want AllowedMethods? (default is only GET/POST)
-		// https://github.com/rs/cors/blob/master/cors.go#L185
 		corsOptions = cors.Options{
-			//AllowedOrigin: []string{"api.recipelister.quixoticflame.net"},
+			//AllowedHeaders: []string{"*"}, //FIXME
+			//AllowedOrigin:  []string{"api.recipelister.quixoticflame.net"},
+			//AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		}
 	}
 
