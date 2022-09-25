@@ -71,7 +71,7 @@ func main() {
 	} else {
 		corsOptions = cors.Options{
 			AllowedHeaders: []string{"x-access-token"},
-			AllowedOrigins: []string{"https://recipelister-react-frontend-zb9h-fnfw3lk9x-kylemarsh.vercel.app", "api.recipestage.quixoticflame.net"},
+			AllowedOrigins: []string{"https://recipelister-react-frontend-zb9h*.vercel.app", "api.recipestage.quixoticflame.net"},
 			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		}
 	}
