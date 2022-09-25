@@ -65,16 +65,18 @@ func main() {
 	if conf.Debug {
 		corsOptions = cors.Options{
 			AllowedHeaders: []string{"*"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			Debug:          true,
 		}
 	} else {
 		corsOptions = cors.Options{
 			AllowedHeaders: []string{"x-access-token"},
-			AllowedOrigins: []string{"recipelister-react-frontend-zb9h-fnfw3lk9x-kylemarsh.vercel.app", "api.recipestage.quixoticflame.net"},
-			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+			AllowedOrigins: []string{"https://recipelister-react-frontend-zb9h-fnfw3lk9x-kylemarsh.vercel.app", "api.recipestage.quixoticflame.net"},
+			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		}
 	}
 
+	fmt.Println(corsOptions)
 	handler := cors.New(corsOptions).Handler(router)
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
