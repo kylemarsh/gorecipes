@@ -69,9 +69,9 @@ func main() {
 		}
 	} else {
 		corsOptions = cors.Options{
-			//AllowedHeaders: []string{"*"}, //FIXME
-			//AllowedOrigin:  []string{"api.recipelister.quixoticflame.net"},
-			//AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+			AllowedHeaders: []string{"x-access-token"},
+			AllowedOrigins: []string{"https://recipelister-react-frontend-zb9h-fnfw3lk9x-kylemarsh.vercel.app/", "api.recipestage.quixoticflame.net"},
+			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		}
 	}
 
