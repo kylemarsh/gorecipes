@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -121,9 +120,9 @@ func authRequired(next http.Handler) http.Handler {
 			return []byte(conf.JwtSecret), nil
 		})
 
-		var ErrTokenExpired = errors.New("Token is expired")
 		if err != nil {
-			if err == ErrTokenExpired {
+			errstring := err.Error()
+			if errstring == "Token is expired" {
 				apiError(w, http.StatusUnauthorized, "auth token expired; please log in again", err)
 			} else {
 				apiError(w, http.StatusBadRequest, "invalid auth token", err)
@@ -151,7 +150,7 @@ func validateJwt(w http.ResponseWriter, r *http.Request) {
 	tokenString := strings.TrimSpace(header)
 	err := jwtValidate(tokenString)
 	if err != nil {
-		apiError(w, http.StatusUnauthorized, "invalid auth token", err)
+		apiError(w, http.StatusBadRequest, "invalid auth token", err)
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -167,6 +166,7 @@ func getHash(w http.ResponseWriter, r *http.Request) {
 }
 
 func getJwt(w http.ResponseWriter, r *http.Request) {
+
 	tokenStr, err := jwtGenerate()
 	if err != nil {
 		apiError(w, http.StatusInternalServerError, "could not sign token", err)
