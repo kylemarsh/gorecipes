@@ -28,6 +28,7 @@ jobs:
         DEBUG: false
         DB_DIALECT: sqlite3
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
 
     - name: Bootstrap DB
       run: make sqlite
