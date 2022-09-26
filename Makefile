@@ -20,7 +20,7 @@ config: mkdest
 	@echo "Writing Config"
 	@touch ${DEST}/${CONFIG}
 	@chmod 600 ${DEST}/${CONFIG}
-	@echo "{\n\t\"Debug\": ${DEBUG},\n\t\"DbDialect\": \"${DB_DIALECT}\",\n\t\"DbDSN\": \"${DB_DSN}\",\n\t\"JwtSecret\": \"${JWT_SECRET}\",\n\t\"Origins\": \"${ORIGINS}\"\n}" > ${DEST}/${CONFIG}
+	@echo "{\n\t\"Debug\": ${DEBUG},\n\t\"DbDialect\": \"${DB_DIALECT}\",\n\t\"DbDSN\": \"${DB_DSN}\",\n\t\"JwtSecret\": \"${JWT_SECRET}\",\n\t\"Origins\": ${ORIGINS}\n}" > ${DEST}/${CONFIG}
 
 sqlite: mkdest
 	cd bootstrapping && go build -v
