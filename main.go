@@ -18,6 +18,7 @@ type configuration struct {
 	DbDialect string
 	DbDSN     string
 	JwtSecret string
+	Origins   []string
 }
 
 var conf configuration
@@ -59,8 +60,6 @@ func main() {
 	debugRouter.HandleFunc("/checkToken/", validateJwt).Methods("GET")
 	debugRouter.HandleFunc("/hashPassword/", getHash).Methods("POST")
 
-	//handler := cors.AllowAll().Handler(router)
-	//handler := cors.Default().Handler(router)
 	var corsOptions cors.Options
 	if conf.Debug {
 		corsOptions = cors.Options{
@@ -71,7 +70,7 @@ func main() {
 	} else {
 		corsOptions = cors.Options{
 			AllowedHeaders: []string{"x-access-token"},
-			AllowedOrigins: []string{"https://recipelister-react-frontend-zb9h*.vercel.app", "api.recipestage.quixoticflame.net"},
+			AllowedOrigins: conf.Origins,
 			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		}
 	}
@@ -101,6 +100,10 @@ func initApp() {
 
 	if conf.JwtSecret == "" {
 		panic("JWT Secret is a required config")
+	}
+
+	if !conf.Debug && len(conf.Origins) == 0 {
+		panic("You must provide allowed origins for CORS when not running under debug")
 	}
 
 	connect()
