@@ -74,8 +74,6 @@ func main() {
 			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		}
 	}
-
-	fmt.Println(corsOptions)
 	handler := cors.New(corsOptions).Handler(router)
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
