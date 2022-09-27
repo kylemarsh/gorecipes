@@ -11,12 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: Dreamhost VPS Production
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
-        go-version: 1.15
+        go-version: '^1.19.1'
 
     - name: Build
       run:  make dist
@@ -28,7 +28,7 @@ jobs:
         ORIGIN: ${{ secrets.ALLOWED_ORIGIN }}
 
     - name: Deploy to Production VPS
-      uses: easingthemes/ssh-deploy@v2.1.5
+      uses: easingthemes/ssh-deploy@v2.2.11
       env:
           ARGS: '-rltgoDzvO --delete'
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
