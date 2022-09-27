@@ -36,9 +36,9 @@ func bootstrap(force bool) {
 		"recipe": {
 			"filename":       dir + "recipes.csv",
 			"drop":           "DROP TABLE IF EXISTS recipe",
-			"create_mysql":   "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
-			"create_sqlite3": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0)",
-			"insert":         "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time) VALUES (?, ?, ?, ?, ?)",
+			"create_mysql":   "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, `new` BOOLEAN NOT NULL DEFAULT 1, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
+			"create_sqlite3": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, `new` BOOLEAN NOT NULL DEFAULT 1)",
+			"insert":         "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time, deleted, new) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		},
 		"recipe_label": {
 			"filename":       dir + "recipe-label.csv",
@@ -119,7 +119,7 @@ func initializeTable(tx *sql.Tx, info map[string]string) {
 		}
 
 		id := record[0]
-		if id == "label_id" || id == "recipe_id" || id == "note_id" {
+		if id == "label_id" || id == "recipe_id" || id == "user_id" || id == "note_id" {
 			continue //skip headers
 		}
 

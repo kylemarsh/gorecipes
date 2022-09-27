@@ -14,12 +14,14 @@ import (
 )
 
 var force = flag.Bool("force", false, "drop and reinitialize the DB even when it already exists")
+var dialect = flag.String("dialect", "sqlite3", "either `sqlite3` or `mysql`")
+var dbdsn = flag.String("dsn", "recipes_sqlite.db", "the connection string for the database")
+
 var conn *sql.DB
 
 func main() {
 	flag.Parse()
-	//conn, _ = sql.Open("mysql", "root@/gotest")
-	conn, _ = sql.Open("sqlite3", "recipes_sqlite.db")
+	conn, _ = sql.Open(*dialect, *dbdsn)
 	defer conn.Close()
 
 	r := conn.QueryRow("select count(*) from label")
@@ -51,9 +53,9 @@ func bootstrap() {
 		"recipe": {
 			"filename":       dir + "recipes.csv",
 			"drop":           "DROP TABLE IF EXISTS recipe",
-			"create_mysql":   "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
-			"create_sqlite3": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0)",
-			"insert":         "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time) VALUES (?, ?, ?, ?, ?)",
+			"create_mysql":   "CREATE TABLE `recipe` ( `recipe_id` int(11) NOT NULL auto_increment, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int(11) NOT NULL, `active_time` int(11)   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, `new` BOOLEAN NOT NULL DEFAULT 1, PRIMARY KEY  (`recipe_id`), KEY `title` (`title`))",
+			"create_sqlite3": "CREATE TABLE `recipe` ( `recipe_id` INTEGER PRIMARY KEY, `title` varchar(255) NOT NULL, `recipe_body` text NOT NULL, `total_time` int NOT NULL, `active_time` int   NOT NULL, `deleted` BOOLEAN NOT NULL DEFAULT 0, `new` BOOLEAN NOT NULL DEFAULT 1)",
+			"insert":         "INSERT INTO recipe (recipe_id, title, recipe_body, total_time, active_time, deleted, new) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		},
 		"recipe_label": {
 			"filename":       dir + "recipe-label.csv",
@@ -62,12 +64,12 @@ func bootstrap() {
 			"create_sqlite3": "CREATE TABLE `recipe_label` ( `recipe_id` bigint NOT NULL, `label_id` int NOT NULL, PRIMARY KEY  (`recipe_id`,`label_id`))",
 			"insert":         "INSERT INTO recipe_label (recipe_id, label_id) VALUES (?, ?)",
 		},
-		"notes": {
+		"note": {
 			"filename":       dir + "notes.csv",
-			"drop":           "DROP TABLE IF EXISTS notes",
-			"create_mysql":   "CREATE TABLE `notes` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` bigint(20)  NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
-			"create_sqlite3": "CREATE TABLE `notes` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` INTEGER NOT NULL, `create_date` INTEGER NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN DEFAULT FALSE)",
-			"insert":         "INSERT INTO notes (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
+			"drop":           "DROP TABLE IF EXISTS note",
+			"create_mysql":   "CREATE TABLE `note` ( `note_id` bigint(20) NOT NULL AUTO_INCREMENT, `recipe_id` bigint(20) NOT NULL, `create_date` bigint(20) NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN NOT NULL DEFAULT 0, PRIMARY KEY (`note_id`), KEY `recipe` (`recipe_id`))",
+			"create_sqlite3": "CREATE TABLE `note` ( `note_id` INTEGER PRIMARY KEY, `recipe_id` INTEGER NOT NULL, `create_date` INTEGER NOT NULL, `note` TEXT NOT NULL, `flagged` BOOLEAN DEFAULT FALSE)",
+			"insert":         "INSERT INTO note (note_id, recipe_id, create_date, note, flagged) VALUES (?, ?, ?, ?, ?)",
 		},
 		"user": {
 			"filename":       dir + "users.csv",
@@ -92,7 +94,7 @@ func bootstrap() {
 	initializeTable(tx, info["recipe_label"])
 
 	fmt.Println("Initializing Notes")
-	initializeTable(tx, info["notes"])
+	initializeTable(tx, info["note"])
 
 	fmt.Println("Initializing Users")
 	initializeTable(tx, info["user"])
@@ -105,7 +107,7 @@ func initializeTable(tx *sql.Tx, info map[string]string) {
 		fmt.Println("Error dropping: ", err)
 	}
 	//FIXME config
-	if _, err := tx.Exec(info["create_sqlite3"]); err != nil {
+	if _, err := tx.Exec(info["create_"+*dialect]); err != nil {
 		fmt.Println("Error creating: ", err)
 	}
 
@@ -130,7 +132,7 @@ func initializeTable(tx *sql.Tx, info map[string]string) {
 		}
 
 		id := record[0]
-		if id == "label_id" || id == "recipe_id" || id == "note_id" {
+		if id == "label_id" || id == "recipe_id" || id == "user_id" || id == "note_id" {
 			fmt.Println(record)
 			continue //skip headers
 		}

@@ -32,6 +32,7 @@ type Recipe struct {
 	Time       int    `db:"total_time"`
 	ActiveTime int    `db:"active_time"`
 	Deleted    bool
+	New        bool
 	Labels     []Label
 	Notes      []Note
 }

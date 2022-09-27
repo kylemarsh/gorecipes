@@ -1,18 +1,15 @@
-name: Deploy Gorecipe to Staging with Sqlite DB
+name: Deploy Gorecipe to Production
 
 on:
   push:
     branches:
-      - staging
-      - workflow_setup
-  pull_request:
-    branches: [ staging ]
+      - main
 
 jobs:
 
-  deploy_staging:
+  deploy_production:
     runs-on: ubuntu-latest
-    environment: Dreamhost VPS Staging
+    environment: Dreamhost VPS Production
     steps:
     - uses: actions/checkout@v2
 
@@ -24,16 +21,13 @@ jobs:
     - name: Build
       run:  make dist
       env:
-        DB_DSN: recipes_sqlite.db
+        DB_DSN: ${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@tcp(${{ secrets.DB_HOST }})/${{ secrets.DB_NAME }}
         DEBUG: false
-        DB_DIALECT: sqlite3
+        DB_DIALECT: mysql
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
         ORIGIN: ${{ secrets.ALLOWED_ORIGIN }}
 
-    - name: Bootstrap DB
-      run: make sqlite
-
-    - name: Deploy to Staging VPS
+    - name: Deploy to Production VPS
       uses: easingthemes/ssh-deploy@v2.1.5
       env:
           ARGS: '-rltgoDzvO --delete'
