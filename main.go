@@ -1,14 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -21,44 +18,51 @@ type configuration struct {
 	Origins   []string
 }
 
+type appError struct {
+	Code    int
+	Message string
+	Error   error
+}
+
+type wrappedHandler func(w http.ResponseWriter, r *http.Request) *appError
+
 var conf configuration
 
 func main() {
 	initApp()
 
 	router := mux.NewRouter().StrictSlash(true)
-	//router.HandleFunc("/", home)
-	router.HandleFunc("/login/", login).Methods("POST")
+	router.Handle("/login/", wrappedHandler(login)).Methods("POST")
 
-	router.HandleFunc("/recipes/", getRecipeList).Methods("GET")
-	router.HandleFunc("/labels/", getAllLabels).Methods("GET")
-	router.HandleFunc("/recipe/{id}/labels/", getLabelsForRecipe).Methods("GET")
-	//router.HandleFunc("/labels/{id}/recipes", getRecipesForLabel).Methods("GET")
+	router.Handle("/recipes/", wrappedHandler(getRecipeList)).Methods("GET")
+	router.Handle("/labels/", wrappedHandler(getAllLabels)).Methods("GET")
+	router.Handle("/recipe/{id}/labels/", wrappedHandler(getLabelsForRecipe)).Methods("GET")
+	//router.Handle("/labels/{id}/recipes", wrappedHandler(getRecipesForLabel)).Methods("GET")
 
 	privRouter := router.PathPrefix("/priv").Subrouter()
 	privRouter.Use(authRequired)
-	privRouter.HandleFunc("/recipes/", getAllRecipes).Methods("GET")
-	privRouter.HandleFunc("/recipe/{id}/", getRecipeByID).Methods("GET")
-	privRouter.HandleFunc("/recipe/{id}/", deleteRecipeSoft).Methods("DELETE")
-	privRouter.HandleFunc("/recipe/{id}/hard", deleteRecipeHard).Methods("DELETE")
-	privRouter.HandleFunc("/recipe/{id}/restore", recipeRestore).Methods("PUT")
-	privRouter.HandleFunc("/recipe/{id}", updateExistingRecipe).Methods("PUT")
-	privRouter.HandleFunc("/recipe/", createNewRecipe).Methods("POST")
-	privRouter.HandleFunc("/recipe/{recipe_id}/label/{label_id}", tagRecipe).Methods("PUT")
-	privRouter.HandleFunc("/recipe/{recipe_id}/label/{label_id}", untagRecipe).Methods("DELETE")
-	privRouter.HandleFunc("/label/{label_name}", addLabel).Methods("PUT")
-	privRouter.HandleFunc("/recipe/{id}/notes/", getNotesForRecipe).Methods("GET")
-	privRouter.HandleFunc("/recipe/{id}/note/", createNoteOnRecipe).Methods("POST")
-	privRouter.HandleFunc("/note/{id}", removeNote).Methods("DELETE")
-	privRouter.HandleFunc("/note/{id}", editNote).Methods("PUT")
-	privRouter.HandleFunc("/note/{id}/flag", flagNote).Methods("PUT")
-	privRouter.HandleFunc("/note/{id}/unflag", unFlagNote).Methods("PUT")
+	privRouter.Handle("/recipes/", wrappedHandler(getAllRecipes)).Methods("GET")
+	privRouter.Handle("/recipe/{id}/", wrappedHandler(getRecipeByID)).Methods("GET")
+	privRouter.Handle("/recipe/{id}/", wrappedHandler(deleteRecipeSoft)).Methods("DELETE")
+	privRouter.Handle("/recipe/{id}/hard", wrappedHandler(deleteRecipeHard)).Methods("DELETE")
+	privRouter.Handle("/recipe/{id}/restore", wrappedHandler(recipeRestore)).Methods("PUT")
+	privRouter.Handle("/recipe/{id}", wrappedHandler(updateExistingRecipe)).Methods("PUT")
+	privRouter.Handle("/recipe/", wrappedHandler(createNewRecipe)).Methods("POST")
+	privRouter.Handle("/recipe/{recipe_id}/label/{label_id}", wrappedHandler(tagRecipe)).Methods("PUT")
+	privRouter.Handle("/recipe/{recipe_id}/label/{label_id}", wrappedHandler(untagRecipe)).Methods("DELETE")
+	privRouter.Handle("/label/{label_name}", wrappedHandler(addLabel)).Methods("PUT")
+	privRouter.Handle("/recipe/{id}/notes/", wrappedHandler(getNotesForRecipe)).Methods("GET")
+	privRouter.Handle("/recipe/{id}/note/", wrappedHandler(createNoteOnRecipe)).Methods("POST")
+	privRouter.Handle("/note/{id}", wrappedHandler(removeNote)).Methods("DELETE")
+	privRouter.Handle("/note/{id}", wrappedHandler(editNote)).Methods("PUT")
+	privRouter.Handle("/note/{id}/flag", wrappedHandler(flagNote)).Methods("PUT")
+	privRouter.Handle("/note/{id}/unflag", wrappedHandler(unFlagNote)).Methods("PUT")
 
 	debugRouter := router.PathPrefix("/debug").Subrouter()
 	debugRouter.Use(debugRequired)
-	debugRouter.HandleFunc("/getToken/", getJwt).Methods("GET")
-	debugRouter.HandleFunc("/checkToken/", validateJwt).Methods("GET")
-	debugRouter.HandleFunc("/hashPassword/", getHash).Methods("POST")
+	debugRouter.Handle("/getToken/", wrappedHandler(getJwt)).Methods("GET")
+	debugRouter.Handle("/checkToken/", wrappedHandler(validateJwt)).Methods("GET")
+	debugRouter.Handle("/hashPassword/", wrappedHandler(getHash)).Methods("POST")
 
 	var corsOptions cors.Options
 	if conf.Debug {
@@ -110,83 +114,10 @@ func initApp() {
 	}
 }
 
-func authRequired(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var header = r.Header.Get("x-access-token")
-		tokenString := strings.TrimSpace(header)
-		if tokenString == "" {
-			apiError(w, http.StatusUnauthorized, "missing auth token", nil)
-			return
-		}
-
-		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(conf.JwtSecret), nil
-		})
-
-		if err != nil {
-			errstring := err.Error()
-			if errstring == "Token is expired" {
-				apiError(w, http.StatusUnauthorized, "auth token expired; please log in again", err)
-			} else {
-				apiError(w, http.StatusBadRequest, "invalid auth token", err)
-			}
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// Debug Mode Middleware -- prohibits accessing certain routes when debug mode is disabled
-func debugRequired(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !conf.Debug {
-			apiError(w, http.StatusForbidden, "token validation only available for debugging", nil)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func validateJwt(w http.ResponseWriter, r *http.Request) {
-
-	var header = r.Header.Get("x-access-token")
-	tokenString := strings.TrimSpace(header)
-	err := jwtValidate(tokenString)
-	if err != nil {
-		apiError(w, http.StatusBadRequest, "invalid auth token", err)
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func getHash(w http.ResponseWriter, r *http.Request) {
-
-	var password = r.FormValue("password")
-	hash, err := hashPassword(password)
-	if err != nil {
-		apiError(w, http.StatusInternalServerError, "problem hashing password", err)
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"hash": hash})
-}
-
-func getJwt(w http.ResponseWriter, r *http.Request) {
-
-	tokenStr, err := jwtGenerate()
-	if err != nil {
-		apiError(w, http.StatusInternalServerError, "could not sign token", err)
+func (fn wrappedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := fn(w, r); err != nil { // Note this is specifically our *appError
+		http.Error(w, err.Message, err.Code)
+		fmt.Printf("%v\n", err.Error)
 		return
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"token": tokenStr})
-}
-
-func apiError(w http.ResponseWriter, statusCode int, msg string, err error) {
-	// Log the error
-	fmt.Println(msg, err)
-
-	// Write the error to the response
-	w.WriteHeader(statusCode)
-	if conf.Debug {
-		fmt.Fprintln(w, msg, err)
-	} else {
-		fmt.Fprintln(w, msg)
 	}
 }
