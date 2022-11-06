@@ -1,7 +1,5 @@
 name: Deploy Gorecipe to Production
 
-on: workflow_dispatch
-
 on:
   push:
     branches:
