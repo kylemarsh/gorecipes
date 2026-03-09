@@ -21,14 +21,15 @@ There is a `README.md` which describes how to develop, what the configuration
 options are, and provides example requests that you can make against the
 development server.
 
-`mem.config`, `dev.config`, and `dev_mysql.config` are configuration files for
+`mem.config`, `dev.config`, and `dev_mysql.config` are JSON configuration files for
 setting up the server for development. (There is a `gorecipes.conf` on the
 deploy host for production) These specify values for the configuration options
-described in `README.md`. The primary difference is that `mem.config` sets the
-server up to use an in-memory sqlite3 database, `dev.config` sets it up to read
-from a sqlite database stored on disk as `recipes_sqlite.db`, and
-`dev_mysql.config` sets it up to read from a mysql server hosted on the local
-machine.
+described in `README.md`. The configuration includes `Debug`, `DbDialect`, `DbDSN`,
+`JwtSecret`, and `Origins` (required when not in debug mode). The primary difference
+between the dev configs is that `mem.config` sets the server up to use an in-memory
+sqlite3 database, `dev.config` sets it up to read from a sqlite database stored on
+disk as `recipes_sqlite.db`, and `dev_mysql.config` sets it up to read from a mysql
+server hosted on the local machine.
 
 The entry point is `main.go`, which handles initialization, configuration,
 defining the routers, and launching the http server.
@@ -67,7 +68,7 @@ struct:
  - `Note`: A note attached to a recipe.
 
 In addition to one table for each of these structures, there is a junction
-table, `recipe-lable`, that provides a many-to-many mapping between recipes
+table, `recipe_label`, that provides a many-to-many mapping between recipes
 and labels.
 
 ## User

@@ -37,7 +37,7 @@ type Recipe struct {
 	Notes      []Note
 }
 
-/*Label - a taxonomic tab for recipes */
+/*Label - a taxonomic tag for recipes */
 type Label struct {
 	ID    int `db:"label_id"`
 	Label string
