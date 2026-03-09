@@ -50,11 +50,18 @@ for `User`, `Recipe`, `Label`, and `Note`. This file also provides functions
 for interacting directly with the database via either the mysql driver or the
 sqlite3 driver.
 
+# Libraries
+This project uses the golang standard libraries. Additional libraries are
+listed in the file `go.mod`. Of importance are:
+ - The project uses gorilla/mux for routing
+ - The project uses jmoiron/sqlx for database abstraction
+ - The project uses golang-jwt/jwt for authentication
+
 # Database Model
 There are 4 types of record tracked, each with its own database table and
 struct:
  - `User`: represents a person who is authorized to view (and maybe modify) the
- recipe database
+   recipe database
  - `Recipe`: The core representation of a recipe itself.
  - `Label`: A taxonomic tag for recipes.
  - `Note`: A note attached to a recipe.
@@ -69,19 +76,19 @@ A `User` has the following attributes:
  - `Username`: the string the user will use to log in
  - `HashedPassword` (`password` in the db): hash of the user's password
  - `PlaintextPassword` (`plaintext_pw_bootstrapping_only` in the db): the
- user's password in plain text. Only used for bootstrapping the development db
+   user's password in plain text. Only used for bootstrapping development db
 
 ## Recipe
 A `Recipe` has the following attributes:
  - `ID` (`recipe_id` in the db): the primary key for this recipe in the db
  - `Title`: the recipe's title, displayed in a search list
  - `Body` (`recipe_body` in the db): the builk of the recipe as a free text
- field. This usually includes ingredients and instructions both
+   field. This usually includes ingredients and instructions both
  - `Time` (`total_time` in the db): how long this recipe takes to cook
  - `ActiveTime` (`active_time` in the db): how long the cook needs to spend
- working on this this recipe (chopping, stirring, etc.)
+   working on this this recipe (chopping, stirring, etc.)
  - `Deleted`: boolean to mark a recipe as deleted. Deleted recipes can be
- restored by setting this back to `false`
+   restored by setting this back to `false`
  - `New`: boolean to mark a recipe as new. Once cooked we mark it `false`.
  - `Labels`: array of `Label` structures this recipe is tagged with
  - `Notes`: array of `Note` structures attached to this recipe
@@ -108,8 +115,7 @@ A `Note` has the following attributes:
  - `ID` (`note_id` in the db): the primary key for this note in the db
  - `RecipeId` (`recipe_id` in the db): the PK for the recipe
  - `Created` (`create_date` in the db): the unix timestamp of the date this
- note was created (used for sorting the notes)
- field. This usually includes ingredients and instructions both
+   note was created (used for sorting the notes)
  - `Note`: the text body of the note
  - `Flagged`: boolean to mark a note as incorporated into the recipe
 
@@ -120,19 +126,22 @@ A `Note` has the following attributes:
 # Routing
 The main class defines three routers:
  - `router` handles unauthenticated requests - logging in, fetching recipe
- titles and labels
+   titles and labels
  - `privRouter` handles requests requiring authenticatin - fetching recipe
- details, adding/editing/deleting records.
+   details, adding/editing/deleting records.
  - `debugRouter` handles special debugging requests and is only accesible when
- the server is running with the `debug` configuration equal to `true`
+   the server is running with the `debug` configuration equal to `true`
 
-The routers are `mux` routers from `github.com/gorilla/mux` and routes are
-set up by calling `Handle` on the router:
+The routers are `mux` routers from `github.com/gorilla/mux` and routes are set
+up by calling `Handle` on the router:
  - The first argument is the path to route. `{}` in the route indicate
- parameters to pass to the handling function.
+   parameters to pass to the handling function.
  - The second argument is the function to call with requests to this route.
  - Handle can be chained with `Method` which is passed the HTTP methods allowed
- for this route.
+   for this route.
+
+The `privRouter` and `debugRouter` use the `authRequired` and `debugRequired`
+middlewares, respectively, to enforce protections around their routes.
 
 # Development
 Use the instructions in README.md to launch a devlopment server for testing
@@ -149,17 +158,40 @@ production server using the production mysql database
 See TODO.md for descriptions of features to be added
 
 # Making Changes
-When making changes:
+##Before making any changes
+ 1. Explore the repository structure
+ 2. Identify relevant files
+ 3. Explain the current implementation
+ 4. Propose changes. Do not write code until the user signs-off on the plan
+
+
+##When making changes
  - ALWAYS create a new branch for the feature of bugfix with a descriptive name
  - NEVER develop directly on the `main` branch
  - NEVER merge feature branches in to `main`
  - NEVER push to the remote repository
+ - Prefer to Follow existing patterns in the repository. Do not introduce new
+   frameworks or patterns unless asked to do so. If you think a different
+   pattern or framework is the best way to accomplish something, ask the user
+   whether you should use it or not, explain why this pattern is correct, and
+   whether or not existing code should be updated to match
+ - Once on the correct feature branch, BEGIN by proposing new or updated tests
  - Ensure any new routes are added to the appropriate router
  - Ensure the CSV files in `bootstrapping/` reflect the new structure of the
- model and contain records that populate any new fields.
+   model and contain records that populate any new fields.
+ - Run through edge cases
+ - Verify imports
+ - Check for compilation errors
+ - Confirm tests compile and pass
 
-After making a change:
- - Update this document so it reflects the new structure of the project
- - Update the TODO.md file to remove the feature request
+##After making a change
+Once the user has accepted changes:
 
+ 1. Explore the repository structure again
+ 2. Identify changes made; DO NOT assume that the changes made are exactly what
+    was discussed in the current context. Look at the diff between the feature
+    branch and `main`.
+ 3. Update this document and any other documentation to reflect the new
+    structure of the project
+ 4. Update the TODO.md file to remove the feature request
 
