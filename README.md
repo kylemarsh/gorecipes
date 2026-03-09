@@ -18,14 +18,21 @@ bootstrap a sqlite database to persist, `make sqlite` will do that and place
 the database file in `./dist` as well.
 ## Configuration
 gorecipes uses the following configuration values, which can be specified in
-`gorecipes.config` or another config file specified with the `--config` flag.
-There is also a `--force` flag to force bootstrapping a database that is
-already populated. Be careful not to use this on a DB you care about!
+a JSON configuration file. The default configuration file is `gorecipes.conf`,
+or another config file can be specified with the `--config` flag.
 
+### Command-line Flags
+- **--config**: specify a configuration file (default: `gorecipes.conf`)
+- **--bootstrap**: bootstrap database with tables and sample data
+- **--force**: force bootstrapping even if database is already populated. Be careful not to use this on a DB you care about!
+- **--debug**: enable debugging output
+
+### Configuration File Options
 - **Debug**: enable debugging output, API commands, etc. Default `false`
 - **DbDialect**: database type to use (`sqlite3` and `mysql`, for example)
-- **DbDSN**: data source name for the db (filename or `:memory:` or sqlite; "user:password@host/db" for mysql...)
+- **DbDSN**: data source name for the db (filename or `:memory:` for sqlite; "user:password@host/db" for mysql...)
 - **JwtSecret**: secret used to generate Json Web Tokens
+- **Origins**: array of allowed origins for CORS. Required when `Debug` is `false`
 
 Make accepts the following environment variables, which align with their
 counterparts above.
