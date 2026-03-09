@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 )
 
@@ -32,10 +32,9 @@ func authRequired(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			errstring := err.Error()
 			var msg string
 			var code int
-			if errstring == "Token is expired" {
+			if errors.Is(err, jwt.ErrTokenExpired) {
 				msg = "auth token expired; please log in again"
 				code = http.StatusUnauthorized
 			} else {
