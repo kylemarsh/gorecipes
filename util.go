@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,7 +25,7 @@ func readConfiguration(c *configuration, configFilename string) error {
 func jwtGenerate() (string, error) {
 
 	// 1 month expiration. TODO Decide on final scheme?
-	claims := &jwt.StandardClaims{ExpiresAt: time.Now().Add(time.Hour * 24 * 30).Unix()}
+	claims := &jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30))}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
 
