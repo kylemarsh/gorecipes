@@ -38,13 +38,13 @@ func TestBootstrap(t *testing.T) {
 
 	checkDb(t, 0, 0, 0)
 	bootstrap(false)
-	checkDb(t, 37, 13, 34)
+	checkDb(t, 37, 13, 32)
 
 	db.Exec("insert into label values (40, 'florp')")
 	bootstrap(false)
-	checkDb(t, 38, 13, 34)
+	checkDb(t, 38, 13, 32)
 	bootstrap(true)
-	checkDb(t, 37, 13, 34)
+	checkDb(t, 37, 13, 32)
 }
 
 func checkDb(t *testing.T, expectedLabels int, expectedRecipes int, expectedRecipeLabels int) {
