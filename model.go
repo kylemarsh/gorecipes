@@ -284,6 +284,14 @@ func connect() {
 		return
 	}
 	db = sqlx.MustConnect(conf.DbDialect, conf.DbDSN)
+
+	// For in-memory SQLite, we must use exactly one connection
+	// Otherwise each connection gets its own isolated database
+	if conf.DbDialect == "sqlite3" && conf.DbDSN == ":memory:" {
+		db.SetMaxOpenConns(1)
+		db.SetMaxIdleConns(1)
+		db.SetConnMaxLifetime(0)
+	}
 }
 
 /***********
