@@ -87,3 +87,8 @@ the privileged (or admin, if it exists) router.
 
 Update a few of the recipes in `bootstrapping/recipes.csv` to have the `new`
 flag toggled on.
+
+## Update Grouping bootstrap data
+Ensure bootstrapping data has a good variety of labels including a few each
+with the labels "main", "drink", "dessert", "appetizer", "breakfast", and
+"side", and a couple with none of those labels.
