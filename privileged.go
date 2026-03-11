@@ -347,6 +347,27 @@ func recipeRestore(w http.ResponseWriter, r *http.Request) *appError {
 	return nil
 }
 
+func flagRecipeCooked(w http.ResponseWriter, r *http.Request) *appError {
+	recipeID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		return &appError{http.StatusBadRequest, "recipe ID must be an integer", err}
+	}
+
+	if _, err := recipeByID(recipeID, false); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &appError{http.StatusNotFound, "recipe does not exist", err}
+		}
+		return &appError{http.StatusInternalServerError, "Problem loading recipe", err}
+	}
+
+	if err := setRecipeNewFlag(recipeID, false); err != nil {
+		return &appError{http.StatusInternalServerError, "problem setting recipe new flag", err}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 func untagRecipe(w http.ResponseWriter, r *http.Request) *appError {
 	recipeID, err := strconv.Atoi(mux.Vars(r)["recipe_id"])
 	if err != nil {
