@@ -46,6 +46,8 @@ func main() {
 	privRouter.Handle("/recipe/{id}/", wrappedHandler(deleteRecipeSoft)).Methods("DELETE")
 	privRouter.Handle("/recipe/{id}/hard", wrappedHandler(deleteRecipeHard)).Methods("DELETE")
 	privRouter.Handle("/recipe/{id}/restore", wrappedHandler(recipeRestore)).Methods("PUT")
+	privRouter.Handle("/recipe/{id}/mark_cooked", wrappedHandler(flagRecipeCooked)).Methods("PUT")
+	privRouter.Handle("/recipe/{id}/mark_new", wrappedHandler(unFlagRecipeCooked)).Methods("PUT")
 	privRouter.Handle("/recipe/{id}", wrappedHandler(updateExistingRecipe)).Methods("PUT")
 	privRouter.Handle("/recipe/", wrappedHandler(createNewRecipe)).Methods("POST")
 	privRouter.Handle("/recipe/{recipe_id}/label/{label_id}", wrappedHandler(tagRecipe)).Methods("PUT")
