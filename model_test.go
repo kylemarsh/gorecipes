@@ -47,6 +47,63 @@ func TestBootstrap(t *testing.T) {
 	checkDb(t, 37, 13, 32)
 }
 
+func TestSetRecipeNewFlag(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a test recipe
+	recipe, err := createRecipe("Test Recipe", "Test body", 10, 20)
+	if err != nil {
+		t.Fatalf("Failed to create test recipe: %v", err)
+	}
+
+	// Recipe should default to new=false
+	if recipe.New {
+		t.Errorf("New recipe should have New=false by default, got New=true")
+	}
+
+	// Set to new (true)
+	err = setRecipeNewFlag(recipe.ID, true)
+	if err != nil {
+		t.Errorf("setRecipeNewFlag(true) returned error: %v", err)
+	}
+
+	// Verify it was set
+	updated, err := recipeByID(recipe.ID, false)
+	if err != nil {
+		t.Fatalf("Failed to fetch recipe after update: %v", err)
+	}
+	if !updated.New {
+		t.Errorf("After setRecipeNewFlag(true), expected New=true, got New=false")
+	}
+
+	// Set to cooked (false)
+	err = setRecipeNewFlag(recipe.ID, false)
+	if err != nil {
+		t.Errorf("setRecipeNewFlag(false) returned error: %v", err)
+	}
+
+	// Verify it was set
+	updated, err = recipeByID(recipe.ID, false)
+	if err != nil {
+		t.Fatalf("Failed to fetch recipe after second update: %v", err)
+	}
+	if updated.New {
+		t.Errorf("After setRecipeNewFlag(false), expected New=false, got New=true")
+	}
+}
+
 func checkDb(t *testing.T, expectedLabels int, expectedRecipes int, expectedRecipeLabels int) {
 	var (
 		numLabels       int
@@ -95,8 +152,8 @@ Stir in sour cream and egg yolk until just moistened
 Shape into ball, cover and refrigerate for 2 hours
 In a large skillet over medium heat cook beef, onion, and mushrooms
 Drain, stir in sour cream, salt, oregano, pepper
-Roll out dough to 1/8” thickness
-Cut into 3” disks
+Roll out dough to 1/8" thickness
+Cut into 3" disks
 Place rounded teaspoon of filling on one side of each circle
 Fold dough over filling, press edges with a fork to seal
 Prick tops with a fork
