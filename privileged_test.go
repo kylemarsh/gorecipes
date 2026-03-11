@@ -361,3 +361,112 @@ func TestFlagRecipeCookedNonExistent(t *testing.T) {
 		t.Errorf("flagRecipeCooked() with non-existent recipe returned wrong code: got %v want %v", err.Code, http.StatusNotFound)
 	}
 }
+
+func TestUnFlagRecipeCookedSuccess(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a recipe (defaults to new=false)
+	recipe, _ := createRecipe("Test Recipe", "Body", 10, 20)
+
+	// Create request to mark it new
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/recipe/%d/mark_new", recipe.ID), nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := unFlagRecipeCooked(rr, req)
+
+	// Check no appError returned
+	if err != nil {
+		t.Errorf("unFlagRecipeCooked() returned appError: %v", err)
+	}
+
+	// Check status code
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("unFlagRecipeCooked() returned wrong status: got %v want %v", status, http.StatusNoContent)
+	}
+
+	// Verify database was updated
+	updated, _ := recipeByID(recipe.ID, false)
+	if !updated.New {
+		t.Errorf("After unFlagRecipeCooked(), expected New=true, got New=false")
+	}
+}
+
+func TestUnFlagRecipeCookedInvalidID(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create request with non-integer ID
+	req := httptest.NewRequest("PUT", "/recipe/xyz/mark_new", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "xyz"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := unFlagRecipeCooked(rr, req)
+
+	// Check appError returned
+	if err == nil {
+		t.Errorf("unFlagRecipeCooked() with invalid ID should return appError")
+	}
+
+	if err != nil && err.Code != http.StatusBadRequest {
+		t.Errorf("unFlagRecipeCooked() with invalid ID returned wrong code: got %v want %v", err.Code, http.StatusBadRequest)
+	}
+}
+
+func TestUnFlagRecipeCookedNonExistent(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create request with non-existent recipe ID
+	req := httptest.NewRequest("PUT", "/recipe/8888/mark_new", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "8888"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := unFlagRecipeCooked(rr, req)
+
+	// Check appError returned
+	if err == nil {
+		t.Errorf("unFlagRecipeCooked() with non-existent recipe should return appError")
+	}
+
+	if err != nil && err.Code != http.StatusNotFound {
+		t.Errorf("unFlagRecipeCooked() with non-existent recipe returned wrong code: got %v want %v", err.Code, http.StatusNotFound)
+	}
+}
