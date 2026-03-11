@@ -54,6 +54,8 @@ Example requests made with curl against development server (localhost:8080)
 - Get full recipe (single recipe): `curl -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID`
 - Delete recipe: `curl -X DELETE -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID`
 - Get full recipe (all recipes): `curl -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipes/`
+- Mark recipe as cooked: `curl -X PUT -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID/mark_cooked`
+- Mark recipe as new: `curl -X PUT -H "x-access-token: $TOKEN" http://localhost:8080/priv/recipe/$RECIPE_ID/mark_new`
 
 ### Debugging Requests
 - Get a signed JWT: `curl http://localhost:8080/debug/getToken/`
