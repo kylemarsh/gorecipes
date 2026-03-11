@@ -470,3 +470,73 @@ func TestUnFlagRecipeCookedNonExistent(t *testing.T) {
 		t.Errorf("unFlagRecipeCooked() with non-existent recipe returned wrong code: got %v want %v", err.Code, http.StatusNotFound)
 	}
 }
+
+func TestRecipeNewFlagIntegration(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a new recipe
+	recipe, err := createRecipe("Integration Test Recipe", "Test body", 15, 25)
+	if err != nil {
+		t.Fatalf("Failed to create recipe: %v", err)
+	}
+
+	// Initial state should be new=false
+	fetched, _ := recipeByID(recipe.ID, false)
+	if fetched.New {
+		t.Errorf("Newly created recipe should have New=false, got New=true")
+	}
+
+	// Mark as new
+	req := httptest.NewRequest("PUT", "/mark_new", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	rr := httptest.NewRecorder()
+	if err := unFlagRecipeCooked(rr, req); err != nil {
+		t.Fatalf("unFlagRecipeCooked failed: %v", err)
+	}
+
+	// Verify it's new
+	fetched, _ = recipeByID(recipe.ID, false)
+	if !fetched.New {
+		t.Errorf("After marking new, expected New=true, got New=false")
+	}
+
+	// Mark as cooked
+	req = httptest.NewRequest("PUT", "/mark_cooked", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	rr = httptest.NewRecorder()
+	if err := flagRecipeCooked(rr, req); err != nil {
+		t.Fatalf("flagRecipeCooked failed: %v", err)
+	}
+
+	// Verify it's not new
+	fetched, _ = recipeByID(recipe.ID, false)
+	if fetched.New {
+		t.Errorf("After marking cooked, expected New=false, got New=true")
+	}
+
+	// Toggle back to new
+	req = httptest.NewRequest("PUT", "/mark_new", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	rr = httptest.NewRecorder()
+	if err := unFlagRecipeCooked(rr, req); err != nil {
+		t.Fatalf("Second unFlagRecipeCooked failed: %v", err)
+	}
+
+	// Verify it's new again
+	fetched, _ = recipeByID(recipe.ID, false)
+	if !fetched.New {
+		t.Errorf("After second marking new, expected New=true, got New=false")
+	}
+}
