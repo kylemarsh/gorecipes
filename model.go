@@ -178,9 +178,9 @@ func createLabel(labelName string) (Label, error) {
 }
 
 func createRecipe(title string, body string, activeTime int, totalTime int) (Recipe, error) {
-	q := "INSERT INTO recipe (title, recipe_body, active_time, total_time) VALUES (?, ?, ?, ?)"
+	q := "INSERT INTO recipe (title, recipe_body, active_time, total_time, new) VALUES (?, ?, ?, ?, ?)"
 	connect()
-	result, err := db.Exec(q, title, body, activeTime, totalTime)
+	result, err := db.Exec(q, title, body, activeTime, totalTime, false)
 	if err != nil {
 		return Recipe{}, err
 	}
@@ -254,6 +254,13 @@ func unDeleteRecipe(recipeId int) error {
 	q := "UPDATE recipe SET deleted = 0 WHERE recipe_id = ?"
 	connect()
 	_, err := db.Exec(q, recipeId)
+	return err
+}
+
+func setRecipeNewFlag(recipeID int, isNew bool) error {
+	q := "UPDATE recipe SET new = ? WHERE recipe_id = ?"
+	connect()
+	_, err := db.Exec(q, isNew, recipeID)
 	return err
 }
 
