@@ -129,7 +129,7 @@ The main class defines three routers:
  - `router` handles unauthenticated requests - logging in, fetching recipe
    titles and labels
  - `privRouter` handles requests requiring authenticatin - fetching recipe
-   details, adding/editing/deleting records.
+   details, adding/editing/deleting records, and marking recipes as new/cooked.
  - `debugRouter` handles special debugging requests and is only accesible when
    the server is running with the `debug` configuration equal to `true`
 
@@ -143,6 +143,19 @@ up by calling `Handle` on the router:
 
 The `privRouter` and `debugRouter` use the `authRequired` and `debugRequired`
 middlewares, respectively, to enforce protections around their routes.
+
+## Recipe New Flag Routes
+The `privRouter` includes two routes for managing the `new` flag on recipes:
+ - `PUT /priv/recipe/{id}/mark_cooked` - handled by `flagRecipeCooked()` in
+   `privileged.go`, sets the recipe's `new` field to `false` to indicate it has
+   been cooked
+ - `PUT /priv/recipe/{id}/mark_new` - handled by `unFlagRecipeCooked()` in
+   `privileged.go`, sets the recipe's `new` field to `true` to mark it as
+   new/uncooked
+
+Both handlers validate the recipe ID, verify the recipe exists (returning 404
+if not), and call `setRecipeNewFlag()` in `model.go` to update the database.
+They follow the same pattern as `flagNote()`/`unFlagNote()` for consistency.
 
 # Development
 Use the instructions in README.md to launch a devlopment server for testing

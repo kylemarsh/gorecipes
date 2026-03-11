@@ -74,20 +74,6 @@ implementation)
 Generate a MySQL query for altering the production labels table to include the
 `icon` field and populate it the same as we do for bootstrapping.
 
-## Add support for Recipe's `New` field
-Add a `setRecipeNewFlag` model method that sets the `new` field on the recipe
-to a passed value.
-
-Add new handlers `flagRecipeCooked` and `unFlagRecipeCooked` to the privileged
-(or admin, if it exists) router that calls the `setRecipeNewFlag` model method.
-
-Add new PUT routes `/recipe/{id}/mark_cooked` and `/recipe/{id}/mark_new`
-handled by `flagRecipeCooked` and `unFlagRecipeCooked` to
-the privileged (or admin, if it exists) router.
-
-Update a few of the recipes in `bootstrapping/recipes.csv` to have the `new`
-flag toggled on.
-
 ## Update Grouping bootstrap data
 Ensure bootstrapping data has a good variety of labels including a few each
 with the labels "main", "drink", "dessert", "appetizer", "breakfast", and
