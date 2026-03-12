@@ -40,7 +40,7 @@ func TestBootstrap(t *testing.T) {
 	bootstrap(false)
 	checkDb(t, 37, 13, 32)
 
-	db.Exec("insert into label values (40, 'florp')")
+	db.Exec("insert into label values (40, 'florp', '')")
 	bootstrap(false)
 	checkDb(t, 38, 13, 32)
 	bootstrap(true)
@@ -170,6 +170,64 @@ func TestUpdateRecipeWithNewFlag(t *testing.T) {
 	}
 	if updated.Title != "Final Title" {
 		t.Errorf("Expected title 'Final Title', got '%s'", updated.Title)
+	}
+}
+
+func TestUpdateLabel(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Update both name and icon
+	err := updateLabel(1, "newname", "🐄")
+	if err != nil {
+		t.Errorf("updateLabel() error = %v", err)
+	}
+
+	label, _ := labelByID(1)
+	if label.Label != "newname" {
+		t.Errorf("Expected label name 'newname', got %q", label.Label)
+	}
+	if label.Icon != "🐄" {
+		t.Errorf("Expected icon '🐄', got %q", label.Icon)
+	}
+
+	// Test 2: Invalid icon should fail
+	err = updateLabel(1, "another", "🐓🐄")
+	if err == nil {
+		t.Error("Expected error for multi-character icon, got nil")
+	}
+
+	// Test 3: Name conflict should fail (beef is label 2)
+	err = updateLabel(1, "beef", "🐓")
+	if err == nil {
+		t.Error("Expected error for duplicate label name, got nil")
+	}
+
+	// Test 4: Empty icon should clear it
+	err = updateLabel(1, "cleared", "")
+	if err != nil {
+		t.Errorf("updateLabel() with empty icon error = %v", err)
+	}
+	label, _ = labelByID(1)
+	if label.Icon != "" {
+		t.Errorf("Expected empty icon, got %q", label.Icon)
+	}
+
+	// Test 5: Nonexistent label should fail
+	err = updateLabel(999, "fake", "")
+	if err == nil {
+		t.Error("Expected error for nonexistent label, got nil")
 	}
 }
 

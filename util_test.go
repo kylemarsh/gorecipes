@@ -198,3 +198,29 @@ func TestHashPassword(t *testing.T) {
 		t.Error("hashPassword() should return different hashes for same password (bcrypt salting)")
 	}
 }
+
+func TestValidateIcon(t *testing.T) {
+	tests := []struct {
+		name    string
+		icon    string
+		wantErr bool
+	}{
+		{"empty string is valid", "", false},
+		{"single ASCII char", "G", false},
+		{"single emoji", "🐓", false},
+		{"emoji with modifier", "🌶️", false},
+		{"country flag", "🇲🇽", false},
+		{"circled letter", "Ⓥ", false},
+		{"multiple emojis", "🐓🐄", true},
+		{"two ASCII chars", "GF", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateIcon(tt.icon)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateIcon(%q) error = %v, wantErr %v", tt.icon, err, tt.wantErr)
+			}
+		})
+	}
+}

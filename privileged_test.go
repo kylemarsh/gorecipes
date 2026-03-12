@@ -825,3 +825,283 @@ func TestUpdateRecipeNewFlagIntegration(t *testing.T) {
 		t.Errorf("Expected title 'Fourth Update', got '%s'", fetched.Title)
 	}
 }
+
+func TestEditLabel(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Update icon only
+	// First get the original label name
+	originalLabel, _ := labelByID(1)
+	originalName := originalLabel.Label
+
+	req := httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🐄"},
+	}
+	rr := httptest.NewRecorder()
+	err := editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 1: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 1: Expected 204, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ := labelByID(1)
+	if label.Icon != "🐄" {
+		t.Errorf("Test 1: Expected icon '🐄', got %q", label.Icon)
+	}
+	if label.Label != originalName {
+		t.Errorf("Test 1: Expected label name to stay %q, got %q", originalName, label.Label)
+	}
+
+	// Test 2: Update name only
+	// Store the icon from Test 1
+	previousIcon := label.Icon
+
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"newname"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 2: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 2: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Label != "newname" {
+		t.Errorf("Test 2: Expected label 'newname', got %q", label.Label)
+	}
+	if label.Icon != previousIcon {
+		t.Errorf("Test 2: Expected icon to stay %q, got %q", previousIcon, label.Icon)
+	}
+
+	// Test 3: Invalid icon
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🐓🐄"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 3: Expected appError for invalid icon, got nil")
+	}
+	if err != nil && err.Code != 400 {
+		t.Errorf("Test 3: Expected 400 for invalid icon, got %d", err.Code)
+	}
+
+	// Test 4: Nonexistent label
+	req = httptest.NewRequest("PUT", "/priv/label/id/999", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "999"})
+	req.Form = map[string][]string{}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 4: Expected appError for nonexistent label, got nil")
+	}
+	if err != nil && err.Code != 404 {
+		t.Errorf("Test 4: Expected 404 for nonexistent label, got %d", err.Code)
+	}
+
+	// Test 5: Name conflict (try to rename label 1 to "beef" which is label 2)
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"beef"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 5: Expected appError for name conflict, got nil")
+	}
+	if err != nil && err.Code != 409 {
+		t.Errorf("Test 5: Expected 409 for name conflict, got %d", err.Code)
+	}
+
+	// Test 6: Clear icon with empty string
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {""},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 6: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 6: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Icon != "" {
+		t.Errorf("Test 6: Expected empty icon, got %q", label.Icon)
+	}
+}
+
+func TestEditLabelIntegration(t *testing.T) {
+	// Full end-to-end test of label editing
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Verify initial state from bootstrap
+	label, _ := labelByID(1)
+	if label.Label != "chicken" {
+		t.Errorf("Expected initial label 'chicken', got %q", label.Label)
+	}
+	if label.Icon != "🐓" {
+		t.Errorf("Expected initial icon '🐓', got %q", label.Icon)
+	}
+
+	// Test 1: Update just the icon
+	req := httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🥩"},
+	}
+	rr := httptest.NewRecorder()
+	err := editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 1: Update icon failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 1: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ = labelByID(1)
+	if label.Label != "chicken" {
+		t.Errorf("Test 1: Label name should not change, got %q", label.Label)
+	}
+	if label.Icon != "🥩" {
+		t.Errorf("Test 1: Expected updated icon '🥩', got %q", label.Icon)
+	}
+
+	// Test 2: Update just the name (verify lowercase normalization)
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"STEAK"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 2: Update name failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 2: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ = labelByID(1)
+	if label.Label != "steak" {
+		t.Errorf("Test 2: Expected lowercase 'steak', got %q", label.Label)
+	}
+	if label.Icon != "🥩" {
+		t.Errorf("Test 2: Icon should not change, got %q", label.Icon)
+	}
+
+	// Test 3: Update both at once
+	req = httptest.NewRequest("PUT", "/priv/label/id/2", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "2"})
+	req.Form = map[string][]string{
+		"label": {"poultry"},
+		"icon":  {"🐔"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 3: Update both failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 3: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ = labelByID(2)
+	if label.Label != "poultry" || label.Icon != "🐔" {
+		t.Errorf("Test 3: Expected 'poultry'/'🐔', got %q/%q", label.Label, label.Icon)
+	}
+
+	// Test 4: Clear icon with empty string
+	req = httptest.NewRequest("PUT", "/priv/label/id/2", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "2"})
+	req.Form = map[string][]string{
+		"icon": {""},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 4: Clear icon failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 4: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ = labelByID(2)
+	if label.Icon != "" {
+		t.Errorf("Test 4: Expected empty icon, got %q", label.Icon)
+	}
+
+	// Test 5: Complex grapheme clusters (emoji with modifier)
+	req = httptest.NewRequest("PUT", "/priv/label/id/3", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "3"})
+	req.Form = map[string][]string{
+		"icon": {"🌶️"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 5: Complex emoji failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 5: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	// Test 6: Country flag (2 code points, 1 grapheme)
+	req = httptest.NewRequest("PUT", "/priv/label/id/14", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "14"})
+	req.Form = map[string][]string{
+		"icon": {"🇲🇽"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Fatalf("Test 6: Country flag failed: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Fatalf("Test 6: Expected 204, got %d - %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ = labelByID(14)
+	if label.Icon != "🇲🇽" {
+		t.Errorf("Test 6: Expected flag '🇲🇽', got %q", label.Icon)
+	}
+}

@@ -29,9 +29,9 @@ func bootstrap(force bool) {
 		"label": {
 			"filename":       dir + "labels.csv",
 			"drop":           "DROP TABLE IF EXISTS label",
-			"create_mysql":   "CREATE TABLE `label` ( `label_id` int(11) NOT NULL auto_increment, `label` varchar(255) NOT NULL, PRIMARY KEY  (`label_id`), KEY `label` (`label`))",
-			"create_sqlite3": "CREATE TABLE `label` ( `label_id` INTEGER PRIMARY KEY, `label` varchar(255) NOT NULL)",
-			"insert":         "INSERT INTO label (label_id, label) VALUES (?, ?)",
+			"create_mysql":   "CREATE TABLE `label` ( `label_id` int(11) NOT NULL auto_increment, `label` varchar(255) NOT NULL, `icon` varchar(255) NOT NULL DEFAULT '', PRIMARY KEY  (`label_id`), KEY `label` (`label`))",
+			"create_sqlite3": "CREATE TABLE `label` ( `label_id` INTEGER PRIMARY KEY, `label` varchar(255) NOT NULL, `icon` varchar(255) NOT NULL DEFAULT '')",
+			"insert":         "INSERT INTO label (label_id, label, icon) VALUES (?, ?, ?)",
 		},
 		"recipe": {
 			"filename":       dir + "recipes.csv",

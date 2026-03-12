@@ -8,7 +8,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/rivo/uniseg"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrIconValidation = errors.New("icon validation failed")
+	ErrLabelConflict  = errors.New("label name conflict")
 )
 
 func readConfiguration(c *configuration, configFilename string) error {
@@ -58,4 +64,16 @@ func hashPassword(password string) (string, error) {
 	var pwBytes = []byte(password)
 	hashedBytes, err := bcrypt.GenerateFromPassword(pwBytes, bcrypt.MinCost)
 	return string(hashedBytes), err
+}
+
+func validateIcon(icon string) error {
+	if icon == "" {
+		return nil // Empty is valid
+	}
+
+	count := uniseg.GraphemeClusterCount(icon)
+	if count != 1 {
+		return fmt.Errorf("icon must be exactly 1 character, got %d: %w", count, ErrIconValidation)
+	}
+	return nil
 }

@@ -428,3 +428,54 @@ func removeNote(w http.ResponseWriter, r *http.Request) *appError {
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
+
+func editLabel(w http.ResponseWriter, r *http.Request) *appError {
+	labelID, err := strconv.Atoi(mux.Vars(r)["label_id"])
+	if err != nil {
+		return &appError{http.StatusBadRequest, "label ID must be an integer", err}
+	}
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		return &appError{http.StatusBadRequest, "invalid form data", err}
+	}
+
+	// Get optional form parameters
+	newName := r.FormValue("label")
+	icon := r.FormValue("icon")
+
+	// Fetch existing label to get current values
+	existing, err := labelByID(labelID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &appError{http.StatusNotFound, "label does not exist", err}
+		}
+		return &appError{http.StatusInternalServerError, "problem loading label", err}
+	}
+
+	// Use existing values if parameters not provided
+	if !r.Form.Has("label") {
+		newName = existing.Label
+	}
+	// Note: icon can be explicitly set to empty string to clear it
+	// So we use r.Form.Has to distinguish "not provided" from "empty string"
+	if !r.Form.Has("icon") {
+		icon = existing.Icon
+	}
+
+	// Update the label
+	err = updateLabel(labelID, newName, icon)
+	if err != nil {
+		// Check if it's a validation error
+		if errors.Is(err, ErrIconValidation) {
+			return &appError{http.StatusBadRequest, err.Error(), err}
+		}
+		if errors.Is(err, ErrLabelConflict) {
+			return &appError{http.StatusConflict, err.Error(), err}
+		}
+		return &appError{http.StatusInternalServerError, "problem updating label", err}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
