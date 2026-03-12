@@ -786,6 +786,13 @@ Create `migration_add_label_icon.sql` in project root:
 -- Date: 2026-03-11
 -- Purpose: Add emoji/character icon support to labels
 
+-- CRITICAL: Set connection charset to utf8mb4 for proper emoji handling
+SET NAMES utf8mb4;
+
+-- Ensure table uses utf8mb4 charset (required for 4-byte emojis)
+-- MySQL's utf8/utf8mb3 only supports 3-byte chars and will corrupt emojis
+ALTER TABLE label CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Add icon column if it doesn't exist (idempotent check)
 SET @col_exists = 0;
 SELECT COUNT(*) INTO @col_exists
@@ -795,7 +802,7 @@ WHERE TABLE_SCHEMA = DATABASE()
   AND COLUMN_NAME = 'icon';
 
 SET @query = IF(@col_exists = 0,
-    'ALTER TABLE label ADD COLUMN icon VARCHAR(255) NOT NULL DEFAULT ''''',
+    'ALTER TABLE label ADD COLUMN icon VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT ''''',
     'SELECT ''Column already exists'' AS msg');
 PREPARE stmt FROM @query;
 EXECUTE stmt;
@@ -861,6 +868,21 @@ mysql --help > /dev/null 2>&1 && echo "MySQL client available" || echo "Skip - n
 ```
 
 Expected: Script is syntactically valid SQL
+
+**IMPORTANT: Running the migration on production**
+
+The migration MUST be run with utf8mb4 charset to prevent emoji corruption:
+
+```bash
+mysql --default-character-set=utf8mb4 -u user -p database_name < migration_add_label_icon.sql
+```
+
+**Do NOT run without --default-character-set=utf8mb4** or the emojis will be double-encoded.
+
+Also ensure the Go application DSN includes `?charset=utf8mb4`:
+```
+DbDSN: "user:password@tcp(host:3306)/database?charset=utf8mb4"
+```
 
 - [ ] **Step 3: Commit migration script**
 
@@ -1189,20 +1211,33 @@ Expected:
 Note: This step should be done carefully on a production database backup first.
 
 ```bash
-# On production server (or backup):
-mysql -u user -p database_name < migration_add_label_icon.sql
+# CRITICAL: Run with utf8mb4 charset to prevent emoji corruption
+mysql --default-character-set=utf8mb4 -u user -p database_name < migration_add_label_icon.sql
+
+# Verify table charset is utf8mb4
+mysql --default-character-set=utf8mb4 -u user -p database_name -e "SHOW CREATE TABLE label;"
 
 # Verify columns added
-mysql -u user -p database_name -e "DESCRIBE label;"
+mysql --default-character-set=utf8mb4 -u user -p database_name -e "DESCRIBE label;"
 
-# Verify icons populated
-mysql -u user -p database_name -e "SELECT label_id, label, icon FROM label WHERE icon != '' LIMIT 10;"
+# Verify icons populated correctly (should show actual emojis)
+mysql --default-character-set=utf8mb4 -u user -p database_name -e "SELECT label_id, label, icon FROM label WHERE icon != '' LIMIT 10;"
+
+# Verify emoji encoding is correct (check UTF-8 bytes)
+mysql --default-character-set=utf8mb4 -u user -p database_name -e "SELECT label_id, label, icon, HEX(icon) FROM label WHERE label_id = 1;"
 ```
 
 Expected:
-- icon column exists with VARCHAR(255) NOT NULL DEFAULT ''
-- Labels have appropriate icons populated
+- Table charset: utf8mb4 (NOT utf8/utf8mb3)
+- icon column exists with VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL DEFAULT ''
+- Labels show actual emoji characters (🐄 not ðŸ„)
+- HEX(icon) for beef should be F09F9084 (correct UTF-8 bytes for 🐄)
 - Script can be run multiple times (idempotent)
+
+**Common Issues:**
+- If emojis show as garbled text (ðŸ„), the connection charset is wrong
+- If HEX shows double-encoded bytes, re-run with SET NAMES utf8mb4
+- Ensure Go application DSN includes ?charset=utf8mb4
 
 - [ ] **Step 5: Final commit and summary**
 

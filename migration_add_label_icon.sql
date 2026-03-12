@@ -2,6 +2,14 @@
 -- Date: 2026-03-11
 -- Purpose: Add emoji/character icon support to labels
 
+-- CRITICAL: Set connection charset to utf8mb4 for proper emoji handling
+-- Without this, emojis will be double-encoded and appear as garbled text
+SET NAMES utf8mb4;
+
+-- Ensure table uses utf8mb4 charset (required for 4-byte emojis)
+-- MySQL's utf8/utf8mb3 only supports 3-byte chars and will corrupt emojis
+ALTER TABLE label CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Add icon column if it doesn't exist (idempotent check)
 SET @col_exists = 0;
 SELECT COUNT(*) INTO @col_exists
@@ -11,7 +19,7 @@ WHERE TABLE_SCHEMA = DATABASE()
   AND COLUMN_NAME = 'icon';
 
 SET @query = IF(@col_exists = 0,
-    'ALTER TABLE label ADD COLUMN icon VARCHAR(255) NOT NULL DEFAULT ''''',
+    'ALTER TABLE label ADD COLUMN icon VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT ''''',
     'SELECT ''Column already exists'' AS msg');
 PREPARE stmt FROM @query;
 EXECUTE stmt;

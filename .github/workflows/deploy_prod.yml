@@ -21,7 +21,7 @@ jobs:
     - name: Build
       run:  make dist
       env:
-        DB_DSN: ${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@tcp(${{ secrets.DB_HOST }})/${{ secrets.DB_NAME }}
+        DB_DSN: ${{ secrets.DB_USER }}:${{ secrets.DB_PASS }}@tcp(${{ secrets.DB_HOST }})/${{ secrets.DB_NAME }}?charset=utf8mb4
         DEBUG: false
         DB_DIALECT: mysql
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
