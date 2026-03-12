@@ -59,6 +59,7 @@ func main() {
 	privRouter.Handle("/note/{id}", wrappedHandler(editNote)).Methods("PUT")
 	privRouter.Handle("/note/{id}/flag", wrappedHandler(flagNote)).Methods("PUT")
 	privRouter.Handle("/note/{id}/unflag", wrappedHandler(unFlagNote)).Methods("PUT")
+	privRouter.Handle("/label/id/{label_id}", wrappedHandler(editLabel)).Methods("PUT")
 
 	debugRouter := router.PathPrefix("/debug").Subrouter()
 	debugRouter.Use(debugRequired)
