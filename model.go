@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -263,6 +264,42 @@ func setRecipeNewFlag(recipeID int, isNew bool) error {
 	q := "UPDATE recipe SET new = ? WHERE recipe_id = ?"
 	connect()
 	_, err := db.Exec(q, isNew, recipeID)
+	return err
+}
+
+func updateLabel(labelID int, newName string, icon string) error {
+	// Validate icon
+	if err := validateIcon(icon); err != nil {
+		return err
+	}
+
+	// Fetch existing label to check if it exists (uses labelByID from model.go:103)
+	existing, err := labelByID(labelID)
+	if err != nil {
+		return err // Returns sql.ErrNoRows if not found
+	}
+
+	// Normalize new name to lowercase
+	normalizedName := strings.ToLower(newName)
+
+	// Check for name conflicts if name is changing
+	if normalizedName != existing.Label {
+		var count int
+		q := "SELECT COUNT(*) FROM label WHERE LOWER(label) = ? AND label_id != ?"
+		connect()
+		err := db.Get(&count, q, normalizedName, labelID)
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return fmt.Errorf("label name already exists: %s", newName)
+		}
+	}
+
+	// Update both fields
+	q := "UPDATE label SET label = ?, icon = ? WHERE label_id = ?"
+	connect()
+	_, err = db.Exec(q, normalizedName, icon, labelID)
 	return err
 }
 
