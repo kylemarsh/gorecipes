@@ -104,6 +104,75 @@ func TestSetRecipeNewFlag(t *testing.T) {
 	}
 }
 
+func TestUpdateRecipeWithNewFlag(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a recipe
+	recipe, err := createRecipe("Original Title", "Original Body", 10, 20)
+	if err != nil {
+		t.Fatalf("Failed to create recipe: %v", err)
+	}
+
+	// Update with new=true
+	err = updateRecipe(recipe.ID, "Updated Title", "Updated Body", 15, 25, true)
+	if err != nil {
+		t.Fatalf("updateRecipe failed: %v", err)
+	}
+
+	// Verify all fields updated including new flag
+	updated, err := recipeByID(recipe.ID, false)
+	if err != nil {
+		t.Fatalf("Failed to fetch updated recipe: %v", err)
+	}
+
+	if updated.Title != "Updated Title" {
+		t.Errorf("Expected title 'Updated Title', got '%s'", updated.Title)
+	}
+	if updated.Body != "Updated Body" {
+		t.Errorf("Expected body 'Updated Body', got '%s'", updated.Body)
+	}
+	if updated.ActiveTime != 15 {
+		t.Errorf("Expected activeTime 15, got %d", updated.ActiveTime)
+	}
+	if updated.Time != 25 {
+		t.Errorf("Expected totalTime 25, got %d", updated.Time)
+	}
+	if !updated.New {
+		t.Errorf("Expected new=true, got new=false")
+	}
+
+	// Update with new=false
+	err = updateRecipe(recipe.ID, "Final Title", "Final Body", 5, 10, false)
+	if err != nil {
+		t.Fatalf("Second updateRecipe failed: %v", err)
+	}
+
+	// Verify new flag set to false
+	updated, err = recipeByID(recipe.ID, false)
+	if err != nil {
+		t.Fatalf("Failed to fetch recipe after second update: %v", err)
+	}
+
+	if updated.New {
+		t.Errorf("Expected new=false after second update, got new=true")
+	}
+	if updated.Title != "Final Title" {
+		t.Errorf("Expected title 'Final Title', got '%s'", updated.Title)
+	}
+}
+
 func checkDb(t *testing.T, expectedLabels int, expectedRecipes int, expectedRecipeLabels int) {
 	var (
 		numLabels       int

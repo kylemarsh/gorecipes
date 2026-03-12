@@ -122,7 +122,8 @@ func updateExistingRecipe(w http.ResponseWriter, r *http.Request) *appError {
 	}
 	body := r.FormValue("body")
 
-	err = updateRecipe(recipeId, title, body, activeTime, totalTime)
+	// TODO: properly parse new flag (Task 5)
+	err = updateRecipe(recipeId, title, body, activeTime, totalTime, false)
 	if err != nil {
 		return &appError{http.StatusInternalServerError, "could not create recipe", err}
 	}

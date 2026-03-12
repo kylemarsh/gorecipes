@@ -217,15 +217,16 @@ func createNote(recipeID int, note string) (Note, error) {
 }
 
 // Edit //
-func updateRecipe(recipeId int, title string, body string, activeTime int, totalTime int) error {
+func updateRecipe(recipeId int, title string, body string, activeTime int, totalTime int, isNew bool) error {
 	q := `UPDATE recipe SET
 		title = ?,
 		recipe_body = ?,
 		active_time = ?,
-		total_time = ?
+		total_time = ?,
+		new = ?
 		WHERE recipe_id = ?`
 	connect()
-	_, err := db.Exec(q, title, body, activeTime, totalTime, recipeId)
+	_, err := db.Exec(q, title, body, activeTime, totalTime, isNew, recipeId)
 	return err
 }
 
