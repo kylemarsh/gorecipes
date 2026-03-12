@@ -292,7 +292,7 @@ func updateLabel(labelID int, newName string, icon string) error {
 			return err
 		}
 		if count > 0 {
-			return fmt.Errorf("label name already exists: %s", newName)
+			return fmt.Errorf("label name already exists: %s: %w", newName, ErrLabelConflict)
 		}
 	}
 

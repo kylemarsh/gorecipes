@@ -467,10 +467,10 @@ func editLabel(w http.ResponseWriter, r *http.Request) *appError {
 	err = updateLabel(labelID, newName, icon)
 	if err != nil {
 		// Check if it's a validation error
-		if strings.Contains(err.Error(), "icon must be") {
+		if errors.Is(err, ErrIconValidation) {
 			return &appError{http.StatusBadRequest, err.Error(), err}
 		}
-		if strings.Contains(err.Error(), "already exists") {
+		if errors.Is(err, ErrLabelConflict) {
 			return &appError{http.StatusConflict, err.Error(), err}
 		}
 		return &appError{http.StatusInternalServerError, "problem updating label", err}

@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	ErrIconValidation = errors.New("icon validation failed")
+	ErrLabelConflict  = errors.New("label name conflict")
+)
+
 func readConfiguration(c *configuration, configFilename string) error {
 	file, err := os.Open(configFilename)
 	if err != nil {
@@ -68,7 +73,7 @@ func validateIcon(icon string) error {
 
 	count := uniseg.GraphemeClusterCount(icon)
 	if count != 1 {
-		return fmt.Errorf("icon must be exactly 1 character, got %d", count)
+		return fmt.Errorf("icon must be exactly 1 character, got %d: %w", count, ErrIconValidation)
 	}
 	return nil
 }
