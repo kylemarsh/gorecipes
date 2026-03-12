@@ -825,3 +825,122 @@ func TestUpdateRecipeNewFlagIntegration(t *testing.T) {
 		t.Errorf("Expected title 'Fourth Update', got '%s'", fetched.Title)
 	}
 }
+
+func TestEditLabel(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Update icon only
+	req := httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🐄"},
+	}
+	rr := httptest.NewRecorder()
+	err := editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 1: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 1: Expected 204, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ := labelByID(1)
+	if label.Icon != "🐄" {
+		t.Errorf("Test 1: Expected icon '🐄', got %q", label.Icon)
+	}
+
+	// Test 2: Update name only
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"newname"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 2: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 2: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Label != "newname" {
+		t.Errorf("Test 2: Expected label 'newname', got %q", label.Label)
+	}
+
+	// Test 3: Invalid icon
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🐓🐄"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 3: Expected appError for invalid icon, got nil")
+	}
+	if err != nil && err.Code != 400 {
+		t.Errorf("Test 3: Expected 400 for invalid icon, got %d", err.Code)
+	}
+
+	// Test 4: Nonexistent label
+	req = httptest.NewRequest("PUT", "/priv/label/id/999", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "999"})
+	req.Form = map[string][]string{}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 4: Expected appError for nonexistent label, got nil")
+	}
+	if err != nil && err.Code != 404 {
+		t.Errorf("Test 4: Expected 404 for nonexistent label, got %d", err.Code)
+	}
+
+	// Test 5: Name conflict (try to rename label 1 to "beef" which is label 2)
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"beef"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 5: Expected appError for name conflict, got nil")
+	}
+	if err != nil && err.Code != 409 {
+		t.Errorf("Test 5: Expected 409 for name conflict, got %d", err.Code)
+	}
+
+	// Test 6: Clear icon with empty string
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {""},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 6: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 6: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Icon != "" {
+		t.Errorf("Test 6: Expected empty icon, got %q", label.Icon)
+	}
+}
