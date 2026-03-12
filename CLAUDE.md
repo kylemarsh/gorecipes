@@ -172,14 +172,10 @@ production server using the production mysql database
 See TODO.md for descriptions of features to be added
 
 # Making Changes
-##Before making any changes
- 1. Explore the repository structure
- 2. Identify relevant files
- 3. Explain the current implementation
- 4. Propose changes. Do not write code until the user signs-off on the plan
+Use the "superpowers" plugin to guide you through making changes to this
+codebase. Before beginning the brainstorm phase, switch to a feature branch.
+Keep the following in mind when making changes:
 
-
-##When making changes
  - ALWAYS create a new branch for the feature of bugfix with a descriptive name
  - NEVER develop directly on the `main` branch
  - NEVER merge feature branches in to `main`
@@ -189,7 +185,6 @@ See TODO.md for descriptions of features to be added
    pattern or framework is the best way to accomplish something, ask the user
    whether you should use it or not, explain why this pattern is correct, and
    whether or not existing code should be updated to match
- - Once on the correct feature branch, BEGIN by proposing new or updated tests
  - Ensure any new routes are added to the appropriate router
  - Ensure the CSV files in `bootstrapping/` reflect the new structure of the
    model and contain records that populate any new fields.
@@ -208,4 +203,3 @@ Once the user has accepted changes:
  3. Update this document and any other documentation to reflect the new
     structure of the project
  4. Update the TODO.md file to remove the feature request
-
