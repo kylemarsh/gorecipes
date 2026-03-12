@@ -108,6 +108,15 @@ func updateExistingRecipe(w http.ResponseWriter, r *http.Request) *appError {
 	if err != nil {
 		return &appError{http.StatusBadRequest, "recipe ID must be an integer", err}
 	}
+
+	// Validate recipe exists before attempting update
+	if _, err := recipeByID(recipeId, false); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &appError{http.StatusNotFound, "recipe does not exist", err}
+		}
+		return &appError{http.StatusInternalServerError, "problem loading recipe", err}
+	}
+
 	title := r.FormValue("title")
 	if title == "" {
 		return &appError{http.StatusBadRequest, "title is required", nil}
@@ -121,10 +130,11 @@ func updateExistingRecipe(w http.ResponseWriter, r *http.Request) *appError {
 		return &appError{http.StatusBadRequest, "totalTime must be an integer", err}
 	}
 	body := r.FormValue("body")
+	isNew := r.FormValue("new") != ""
 
-	err = updateRecipe(recipeId, title, body, activeTime, totalTime)
+	err = updateRecipe(recipeId, title, body, activeTime, totalTime, isNew)
 	if err != nil {
-		return &appError{http.StatusInternalServerError, "could not create recipe", err}
+		return &appError{http.StatusInternalServerError, "could not update recipe", err}
 	}
 	w.WriteHeader(http.StatusNoContent)
 	return nil
