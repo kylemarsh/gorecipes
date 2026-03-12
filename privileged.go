@@ -454,7 +454,7 @@ func editLabel(w http.ResponseWriter, r *http.Request) *appError {
 	}
 
 	// Use existing values if parameters not provided
-	if newName == "" {
+	if !r.Form.Has("label") {
 		newName = existing.Label
 	}
 	// Note: icon can be explicitly set to empty string to clear it
