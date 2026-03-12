@@ -540,3 +540,171 @@ func TestRecipeNewFlagIntegration(t *testing.T) {
 		t.Errorf("After second marking new, expected New=true, got New=false")
 	}
 }
+
+func TestUpdateExistingRecipeWithNewFlagTrue(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a recipe (defaults to new=false)
+	recipe, _ := createRecipe("Test Recipe", "Original Body", 10, 20)
+
+	// Verify initial state
+	fetched, _ := recipeByID(recipe.ID, false)
+	if fetched.New {
+		t.Errorf("Initial recipe should have New=false, got New=true")
+	}
+
+	// Create PUT request with new=on (checkbox checked)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/recipe/%d", recipe.ID), nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	req.Form = map[string][]string{
+		"title":      {"Updated Title"},
+		"body":       {"Updated Body"},
+		"activeTime": {"15"},
+		"totalTime":  {"25"},
+		"new":        {"on"},
+	}
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := updateExistingRecipe(rr, req)
+
+	// Check no appError returned
+	if err != nil {
+		t.Errorf("updateExistingRecipe() returned appError: %v", err)
+	}
+
+	// Check status code
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("updateExistingRecipe() returned wrong status: got %v want %v", status, http.StatusNoContent)
+	}
+
+	// Verify database was updated with new=true
+	updated, _ := recipeByID(recipe.ID, false)
+	if !updated.New {
+		t.Errorf("After update with new=on, expected New=true, got New=false")
+	}
+	if updated.Title != "Updated Title" {
+		t.Errorf("Expected title 'Updated Title', got '%s'", updated.Title)
+	}
+	if updated.Body != "Updated Body" {
+		t.Errorf("Expected body 'Updated Body', got '%s'", updated.Body)
+	}
+	if updated.ActiveTime != 15 {
+		t.Errorf("Expected activeTime 15, got %d", updated.ActiveTime)
+	}
+	if updated.Time != 25 {
+		t.Errorf("Expected totalTime 25, got %d", updated.Time)
+	}
+}
+
+func TestUpdateExistingRecipeWithNewFlagFalse(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a recipe and set it to new
+	recipe, _ := createRecipe("Test Recipe", "Original Body", 10, 20)
+	setRecipeNewFlag(recipe.ID, true)
+
+	// Verify initial state
+	fetched, _ := recipeByID(recipe.ID, false)
+	if !fetched.New {
+		t.Errorf("Recipe should have New=true after setRecipeNewFlag, got New=false")
+	}
+
+	// Create PUT request WITHOUT new field (checkbox unchecked)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/recipe/%d", recipe.ID), nil)
+	req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(recipe.ID)})
+	req.Form = map[string][]string{
+		"title":      {"Updated Title"},
+		"body":       {"Updated Body"},
+		"activeTime": {"15"},
+		"totalTime":  {"25"},
+		// "new" field absent - checkbox unchecked
+	}
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := updateExistingRecipe(rr, req)
+
+	// Check no appError returned
+	if err != nil {
+		t.Errorf("updateExistingRecipe() returned appError: %v", err)
+	}
+
+	// Check status code
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("updateExistingRecipe() returned wrong status: got %v want %v", status, http.StatusNoContent)
+	}
+
+	// Verify database was updated with new=false
+	updated, _ := recipeByID(recipe.ID, false)
+	if updated.New {
+		t.Errorf("After update without new field, expected New=false, got New=true")
+	}
+	if updated.Title != "Updated Title" {
+		t.Errorf("Expected title 'Updated Title', got '%s'", updated.Title)
+	}
+}
+
+func TestUpdateExistingRecipeNonExistent(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create PUT request for non-existent recipe
+	req := httptest.NewRequest("PUT", "/recipe/99999", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "99999"})
+	req.Form = map[string][]string{
+		"title":      {"Updated Title"},
+		"body":       {"Updated Body"},
+		"activeTime": {"15"},
+		"totalTime":  {"25"},
+		"new":        {"on"},
+	}
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	err := updateExistingRecipe(rr, req)
+
+	// Check appError returned
+	if err == nil {
+		t.Errorf("updateExistingRecipe() with non-existent recipe should return appError")
+	}
+
+	if err != nil && err.Code != http.StatusNotFound {
+		t.Errorf("updateExistingRecipe() with non-existent recipe returned wrong code: got %v want %v", err.Code, http.StatusNotFound)
+	}
+}
