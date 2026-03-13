@@ -43,6 +43,7 @@ type Label struct {
 	ID    int `db:"label_id"`
 	Label string
 	Icon  string
+	Type  string
 }
 
 /*Note - a note attached to a recipe */
