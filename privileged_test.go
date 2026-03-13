@@ -1105,3 +1105,120 @@ func TestEditLabelIntegration(t *testing.T) {
 		t.Errorf("Test 6: Expected flag '🇲🇽', got %q", label.Icon)
 	}
 }
+
+func TestEditLabelWithType(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Update type only
+	req := httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"type": {"protein"},
+	}
+	rr := httptest.NewRecorder()
+	err := editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 1: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 1: Expected 204, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	label, _ := labelByID(1)
+	if label.Type != "protein" {
+		t.Errorf("Test 1: Expected type 'protein', got %q", label.Type)
+	}
+
+	// Test 2: Update all three fields
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"label": {"poultry"},
+		"icon":  {"🐔"},
+		"type":  {"protein"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 2: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 2: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Label != "poultry" || label.Icon != "🐔" || label.Type != "protein" {
+		t.Errorf("Test 2: Expected poultry/🐔/protein, got %q/%q/%q", label.Label, label.Icon, label.Type)
+	}
+
+	// Test 3: Type too long returns 400
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"type": {"123456789012345678901"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err == nil {
+		t.Errorf("Test 3: Expected appError for type too long, got nil")
+	}
+	if err != nil && err.Code != 400 {
+		t.Errorf("Test 3: Expected 400 for type too long, got %d", err.Code)
+	}
+
+	// Test 4: Clear type with empty string
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"type": {""},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 4: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 4: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Type != "" {
+		t.Errorf("Test 4: Expected empty type, got %q", label.Type)
+	}
+
+	// Test 5: Missing type parameter preserves existing value
+	// First set a type
+	updateLabel(1, "poultry", "🐔", "protein")
+
+	// Then update only icon (no type parameter)
+	req = httptest.NewRequest("PUT", "/priv/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	req.Form = map[string][]string{
+		"icon": {"🥩"},
+	}
+	rr = httptest.NewRecorder()
+	err = editLabel(rr, req)
+	if err != nil {
+		t.Errorf("Test 5: editLabel returned appError: %v", err)
+	}
+	if rr.Code != 204 {
+		t.Errorf("Test 5: Expected 204, got %d", rr.Code)
+	}
+
+	label, _ = labelByID(1)
+	if label.Type != "protein" {
+		t.Errorf("Test 5: Type should be preserved, got %q", label.Type)
+	}
+}

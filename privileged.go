@@ -443,6 +443,7 @@ func editLabel(w http.ResponseWriter, r *http.Request) *appError {
 	// Get optional form parameters
 	newName := r.FormValue("label")
 	icon := r.FormValue("icon")
+	labelType := r.FormValue("type")
 
 	// Fetch existing label to get current values
 	existing, err := labelByID(labelID)
@@ -462,12 +463,18 @@ func editLabel(w http.ResponseWriter, r *http.Request) *appError {
 	if !r.Form.Has("icon") {
 		icon = existing.Icon
 	}
+	if !r.Form.Has("type") {
+		labelType = existing.Type
+	}
 
 	// Update the label
-	err = updateLabel(labelID, newName, icon, "")
+	err = updateLabel(labelID, newName, icon, labelType)
 	if err != nil {
 		// Check if it's a validation error
 		if errors.Is(err, ErrIconValidation) {
+			return &appError{http.StatusBadRequest, err.Error(), err}
+		}
+		if errors.Is(err, ErrTypeValidation) {
 			return &appError{http.StatusBadRequest, err.Error(), err}
 		}
 		if errors.Is(err, ErrLabelConflict) {
