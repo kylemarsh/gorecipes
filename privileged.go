@@ -464,7 +464,7 @@ func editLabel(w http.ResponseWriter, r *http.Request) *appError {
 	}
 
 	// Update the label
-	err = updateLabel(labelID, newName, icon)
+	err = updateLabel(labelID, newName, icon, "")
 	if err != nil {
 		// Check if it's a validation error
 		if errors.Is(err, ErrIconValidation) {
