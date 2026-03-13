@@ -14,6 +14,10 @@ There is a `bootstrapping` folder that holds a program
 to initialize a new database and several CSV files that contain data to be
 imported into the database to initialize it.
 
+There is a `scripts` directory that holds SQL migration scripts for applying
+schema changes to the production database. These are manually applied on the
+production server when database structure changes are deployed.
+
 There is a `Makefile` that defines several build commands, mostly used by the
 deployment workflows.
 
