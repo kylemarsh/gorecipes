@@ -224,3 +224,27 @@ func TestValidateIcon(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateType(t *testing.T) {
+	tests := []struct {
+		name      string
+		labelType string
+		wantErr   bool
+	}{
+		{"empty string is valid", "", false},
+		{"single char", "c", false},
+		{"20 chars (boundary)", "12345678901234567890", false},
+		{"21 chars (too long)", "123456789012345678901", true},
+		{"lowercase", "course", false},
+		{"mixed case", "Course", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateType(tt.labelType)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateType(%q) error = %v, wantErr %v", tt.labelType, err, tt.wantErr)
+			}
+		})
+	}
+}
