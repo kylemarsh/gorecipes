@@ -99,6 +99,8 @@ A `Recipe` has the following attributes:
 A `Label` has the following attributes:
  - `ID` (`label_id` in the db): the primary key for this label in the db
  - `Label`: the label's name
+ - `Icon`: optional emoji/character icon
+ - `Type`: optional category (protein, course, cuisine, dietary, dish, attribute, ingredient, preparation)
 
  Labels are many-to-many with recipes, so they need a junction table. A label
  is some kind of informative tag to use for filtering recipes. Examples are:

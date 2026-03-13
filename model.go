@@ -43,6 +43,7 @@ type Label struct {
 	ID    int `db:"label_id"`
 	Label string
 	Icon  string
+	Type  string
 }
 
 /*Note - a note attached to a recipe */
@@ -267,9 +268,14 @@ func setRecipeNewFlag(recipeID int, isNew bool) error {
 	return err
 }
 
-func updateLabel(labelID int, newName string, icon string) error {
+func updateLabel(labelID int, newName string, icon string, labelType string) error {
 	// Validate icon
 	if err := validateIcon(icon); err != nil {
+		return err
+	}
+
+	// Validate type
+	if err := validateType(labelType); err != nil {
 		return err
 	}
 
@@ -281,6 +287,9 @@ func updateLabel(labelID int, newName string, icon string) error {
 
 	// Normalize new name to lowercase
 	normalizedName := strings.ToLower(newName)
+
+	// Normalize type to lowercase
+	normalizedType := strings.ToLower(labelType)
 
 	// Check for name conflicts if name is changing
 	if normalizedName != existing.Label {
@@ -296,10 +305,10 @@ func updateLabel(labelID int, newName string, icon string) error {
 		}
 	}
 
-	// Update both fields
-	q := "UPDATE label SET label = ?, icon = ? WHERE label_id = ?"
+	// Update all three fields
+	q := "UPDATE label SET label = ?, icon = ?, type = ? WHERE label_id = ?"
 	connect()
-	_, err = db.Exec(q, normalizedName, icon, labelID)
+	_, err = db.Exec(q, normalizedName, icon, normalizedType, labelID)
 	return err
 }
 

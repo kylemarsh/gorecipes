@@ -15,6 +15,7 @@ import (
 var (
 	ErrIconValidation = errors.New("icon validation failed")
 	ErrLabelConflict  = errors.New("label name conflict")
+	ErrTypeValidation = errors.New("type validation failed")
 )
 
 func readConfiguration(c *configuration, configFilename string) error {
@@ -74,6 +75,17 @@ func validateIcon(icon string) error {
 	count := uniseg.GraphemeClusterCount(icon)
 	if count != 1 {
 		return fmt.Errorf("icon must be exactly 1 character, got %d: %w", count, ErrIconValidation)
+	}
+	return nil
+}
+
+func validateType(labelType string) error {
+	if labelType == "" {
+		return nil // Empty is valid
+	}
+
+	if len(labelType) > 20 {
+		return fmt.Errorf("type must be 20 characters or less, got %d: %w", len(labelType), ErrTypeValidation)
 	}
 	return nil
 }

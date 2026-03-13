@@ -38,13 +38,13 @@ func TestBootstrap(t *testing.T) {
 
 	checkDb(t, 0, 0, 0)
 	bootstrap(false)
-	checkDb(t, 37, 13, 32)
+	checkDb(t, 46, 13, 32)
 
-	db.Exec("insert into label values (40, 'florp', '')")
+	db.Exec("insert into label values (50, 'florp', '', '')")
 	bootstrap(false)
-	checkDb(t, 38, 13, 32)
+	checkDb(t, 47, 13, 32)
 	bootstrap(true)
-	checkDb(t, 37, 13, 32)
+	checkDb(t, 46, 13, 32)
 }
 
 func TestSetRecipeNewFlag(t *testing.T) {
@@ -189,7 +189,7 @@ func TestUpdateLabel(t *testing.T) {
 	bootstrap(true)
 
 	// Test 1: Update both name and icon
-	err := updateLabel(1, "newname", "🐄")
+	err := updateLabel(1, "newname", "🐄", "")
 	if err != nil {
 		t.Errorf("updateLabel() error = %v", err)
 	}
@@ -203,19 +203,19 @@ func TestUpdateLabel(t *testing.T) {
 	}
 
 	// Test 2: Invalid icon should fail
-	err = updateLabel(1, "another", "🐓🐄")
+	err = updateLabel(1, "another", "🐓🐄", "")
 	if err == nil {
 		t.Error("Expected error for multi-character icon, got nil")
 	}
 
 	// Test 3: Name conflict should fail (beef is label 2)
-	err = updateLabel(1, "beef", "🐓")
+	err = updateLabel(1, "beef", "🐓", "")
 	if err == nil {
 		t.Error("Expected error for duplicate label name, got nil")
 	}
 
 	// Test 4: Empty icon should clear it
-	err = updateLabel(1, "cleared", "")
+	err = updateLabel(1, "cleared", "", "")
 	if err != nil {
 		t.Errorf("updateLabel() with empty icon error = %v", err)
 	}
@@ -225,9 +225,64 @@ func TestUpdateLabel(t *testing.T) {
 	}
 
 	// Test 5: Nonexistent label should fail
-	err = updateLabel(999, "fake", "")
+	err = updateLabel(999, "fake", "", "")
 	if err == nil {
 		t.Error("Expected error for nonexistent label, got nil")
+	}
+}
+
+func TestUpdateLabelWithType(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Update type only
+	err := updateLabel(1, "chicken", "🐓", "protein")
+	if err != nil {
+		t.Errorf("updateLabel() error = %v", err)
+	}
+
+	label, _ := labelByID(1)
+	if label.Type != "protein" {
+		t.Errorf("Expected type 'protein', got %q", label.Type)
+	}
+
+	// Test 2: Type normalization (uppercase -> lowercase)
+	err = updateLabel(1, "chicken", "🐓", "PROTEIN")
+	if err != nil {
+		t.Errorf("updateLabel() error = %v", err)
+	}
+
+	label, _ = labelByID(1)
+	if label.Type != "protein" {
+		t.Errorf("Expected lowercase 'protein', got %q", label.Type)
+	}
+
+	// Test 3: Empty type clears it
+	err = updateLabel(1, "chicken", "🐓", "")
+	if err != nil {
+		t.Errorf("updateLabel() with empty type error = %v", err)
+	}
+
+	label, _ = labelByID(1)
+	if label.Type != "" {
+		t.Errorf("Expected empty type, got %q", label.Type)
+	}
+
+	// Test 4: Type too long should fail
+	err = updateLabel(1, "chicken", "🐓", "123456789012345678901")
+	if err == nil {
+		t.Error("Expected error for type too long, got nil")
 	}
 }
 

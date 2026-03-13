@@ -24,56 +24,6 @@ leaving the rest as non-administrative users.
 Generate a MySQL query for altering the production users table to include the
 `administrator` field.
 
-
-## Add `Type` attribute to Label
-Add a string field to the Label database table and struct to hold a meta-label
-describing what category of label this is. (for example, "vegan" would be a
-"dietary restriction", while "mexican" would be a "cuisine" and "soup" would be
-a "dish type".
-
-Include this new field in the `addLabel` handler and the `createLabel` model
-method.
-
-Add a new `updateLabelType` method to the model to update a label's type in the
-database.
-
-Add a new `editLabelType` handler to the privileged (or admin, if it exists)
-router that calls the `updateLabelType` model method
-
-Add a PUT route `/label/{label_name}/type` handled by `editLabelType` to the
-privileged (or admin, if it exists) router.
-
-Add the type field to `bootstrapping/labels.csv` and provide a value for all
-the existing labels. Mapping of label_ids to types to be provided when we make
-the change.
-
-Generate a MySQL query for altering the production labels table to include the
-`type` field and populate it the same as we do for bootstrapping.
-
-## Add `Icon` attribute to Label
-Add a nullable field to the Label database table and struct to hold a single
-character (likely an emoji or other multibyte code point) to represent this
-label.
-
-Include this new field in the `addLabel` handler and the `createLabel` model
-method.
-
-Add a new `updateLabelIcon` method to the model to update a label's icon in the
-database.
-
-Add a new `editLabelIcon` handler to the privileged (or admin, if it exists)
-router that calls the `updateLabelIcon` model method
-
-Add a PUT route `/label/{label_name}/icon` handled by `editLabelIcon` to the
-privileged (or admin, if it exists) router.
-
-Add the icon field to `bootstrapping/labels.csv`. Only provide an icon in the
-bootstrapping CSV for labels with icons provided here (to be added before
-implementation)
-
-Generate a MySQL query for altering the production labels table to include the
-`icon` field and populate it the same as we do for bootstrapping.
-
 ## Update Grouping bootstrap data
 Ensure bootstrapping data has a good variety of labels including a few each
 with the labels "main", "drink", "dessert", "appetizer", "breakfast", and
