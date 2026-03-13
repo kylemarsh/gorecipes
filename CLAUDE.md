@@ -172,14 +172,17 @@ production server using the production mysql database
 See TODO.md for descriptions of features to be added
 
 # Making Changes
-Use the "superpowers" plugin to guide you through making changes to this
-codebase. Before beginning the brainstorm phase, switch to a feature branch.
-Keep the following in mind when making changes:
-
  - ALWAYS create a new branch for the feature of bugfix with a descriptive name
+   before beginning development.
  - NEVER develop directly on the `main` branch
  - NEVER merge feature branches in to `main`
  - NEVER push to the remote repository
+
+Use the "superpowers" plugin to guide you through making changes to this
+codebase.
+
+Keep the following in mind when making changes:
+
  - Prefer to Follow existing patterns in the repository. Do not introduce new
    frameworks or patterns unless asked to do so. If you think a different
    pattern or framework is the best way to accomplish something, ask the user
