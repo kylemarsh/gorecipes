@@ -60,16 +60,24 @@ func jwtGenerate(userID int, isAdmin bool) (string, error) {
 	return tokenStr, nil
 }
 
-func jwtValidate(tokenString string) error {
+func jwtExtractClaims(tokenString string) (*CustomClaims, error) {
 	if tokenString == "" {
-		return errors.New("missing auth token")
+		return nil, errors.New("missing auth token")
 	}
 
-	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(conf.JwtSecret), nil
 	})
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token claims")
 }
 
 func hashPassword(password string) (string, error) {

@@ -18,10 +18,9 @@ func debugRequired(next http.Handler) http.Handler {
 }
 
 func validateJwt(w http.ResponseWriter, r *http.Request) *appError {
-
 	var header = r.Header.Get("x-access-token")
 	tokenString := strings.TrimSpace(header)
-	err := jwtValidate(tokenString)
+	_, err := jwtExtractClaims(tokenString)
 	if err != nil {
 		return &appError{http.StatusBadRequest, "invalid auth token", err}
 	}
