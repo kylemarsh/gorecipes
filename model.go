@@ -23,6 +23,7 @@ type User struct {
 	Username          string
 	HashedPassword    string `db:"password"`
 	PlaintextPassword string `db:"plaintext_pw_bootstrapping_only"`
+	Administrator     bool `db:"administrator"`
 }
 
 /*Recipe - basic unit of the recipe database */
