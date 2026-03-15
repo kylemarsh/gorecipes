@@ -41,8 +41,8 @@ func getHash(w http.ResponseWriter, r *http.Request) *appError {
 }
 
 func getJwt(w http.ResponseWriter, r *http.Request) *appError {
-
-	tokenStr, err := jwtGenerate()
+	// Debug token with admin=true for testing
+	tokenStr, err := jwtGenerate(1, true)
 	if err != nil {
 		return &appError{http.StatusInternalServerError, "could not sign token", err}
 	}

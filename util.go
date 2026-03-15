@@ -35,10 +35,15 @@ func readConfiguration(c *configuration, configFilename string) error {
 	return decoder.Decode(&c)
 }
 
-func jwtGenerate() (string, error) {
-
+func jwtGenerate(userID int, isAdmin bool) (string, error) {
 	// 1 month expiration. TODO Decide on final scheme?
-	claims := &jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30))}
+	claims := &CustomClaims{
+		UserID:  userID,
+		IsAdmin: isAdmin,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)),
+		},
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
 

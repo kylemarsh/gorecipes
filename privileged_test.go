@@ -30,7 +30,7 @@ func TestAuthRequiredWithValidToken(t *testing.T) {
 	setupAuthConfig()
 
 	// Generate a valid token
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestAuthRequiredWithWrongSecret(t *testing.T) {
 	setupAuthConfig()
 
 	// Generate token with current secret
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -222,7 +222,7 @@ func TestAuthRequiredWithTokenInWhitespace(t *testing.T) {
 	setupAuthConfig()
 
 	// Generate a valid token
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}

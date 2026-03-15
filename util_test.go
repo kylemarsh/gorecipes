@@ -19,7 +19,7 @@ func setupJwtConfig() {
 func TestJwtGenerate(t *testing.T) {
 	setupJwtConfig()
 
-	token, err := jwtGenerate()
+	token, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Errorf("jwtGenerate() returned error: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestJwtGenerate(t *testing.T) {
 func TestJwtGenerateHasExpirationClaim(t *testing.T) {
 	setupJwtConfig()
 
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("jwtGenerate() returned error: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestJwtGenerateHasExpirationClaim(t *testing.T) {
 func TestJwtValidateWithValidToken(t *testing.T) {
 	setupJwtConfig()
 
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("jwtGenerate() returned error: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestJwtValidateWithWrongSecret(t *testing.T) {
 	setupJwtConfig()
 
 	// Generate token with one secret
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("jwtGenerate() returned error: %v", err)
 	}
@@ -263,5 +263,57 @@ func TestCustomClaimsStructure(t *testing.T) {
 	}
 	if claims.IsAdmin != true {
 		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+}
+
+func TestJwtGenerateWithUserInfo(t *testing.T) {
+	// Setup test config
+	conf.JwtSecret = "test-secret-key-for-testing"
+
+	// Test admin user
+	tokenStr, err := jwtGenerate(1, true)
+	if err != nil {
+		t.Fatalf("jwtGenerate failed: %v", err)
+	}
+	if tokenStr == "" {
+		t.Error("Expected non-empty token string")
+	}
+
+	// Parse and verify claims
+	token, err := jwt.ParseWithClaims(tokenStr, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(conf.JwtSecret), nil
+	})
+	if err != nil {
+		t.Fatalf("Failed to parse token: %v", err)
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		t.Fatal("Failed to cast claims to CustomClaims")
+	}
+
+	if claims.UserID != 1 {
+		t.Errorf("Expected UserID 1, got %d", claims.UserID)
+	}
+	if claims.IsAdmin != true {
+		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+
+	// Test non-admin user
+	tokenStr2, err := jwtGenerate(2, false)
+	if err != nil {
+		t.Fatalf("jwtGenerate failed for non-admin: %v", err)
+	}
+
+	token2, _ := jwt.ParseWithClaims(tokenStr2, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(conf.JwtSecret), nil
+	})
+	claims2 := token2.Claims.(*CustomClaims)
+
+	if claims2.UserID != 2 {
+		t.Errorf("Expected UserID 2, got %d", claims2.UserID)
+	}
+	if claims2.IsAdmin != false {
+		t.Errorf("Expected IsAdmin false, got %v", claims2.IsAdmin)
 	}
 }
