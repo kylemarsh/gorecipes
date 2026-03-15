@@ -18,6 +18,12 @@ var (
 	ErrTypeValidation = errors.New("type validation failed")
 )
 
+type CustomClaims struct {
+	UserID  int  `json:"user_id"`
+	IsAdmin bool `json:"is_admin"`
+	jwt.RegisteredClaims
+}
+
 func readConfiguration(c *configuration, configFilename string) error {
 	file, err := os.Open(configFilename)
 	if err != nil {

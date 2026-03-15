@@ -248,3 +248,20 @@ func TestValidateType(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomClaimsStructure(t *testing.T) {
+	claims := &CustomClaims{
+		UserID:  1,
+		IsAdmin: true,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	}
+
+	if claims.UserID != 1 {
+		t.Errorf("Expected UserID 1, got %d", claims.UserID)
+	}
+	if claims.IsAdmin != true {
+		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+}
