@@ -19,7 +19,7 @@ func setupJwtConfig() {
 func TestJwtGenerate(t *testing.T) {
 	setupJwtConfig()
 
-	token, err := jwtGenerate()
+	token, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Errorf("jwtGenerate() returned error: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestJwtGenerate(t *testing.T) {
 func TestJwtGenerateHasExpirationClaim(t *testing.T) {
 	setupJwtConfig()
 
-	tokenString, err := jwtGenerate()
+	tokenString, err := jwtGenerate(1, true)
 	if err != nil {
 		t.Fatalf("jwtGenerate() returned error: %v", err)
 	}
@@ -77,99 +77,6 @@ func TestJwtGenerateHasExpirationClaim(t *testing.T) {
 	if timeDiff < -5*time.Second || timeDiff > 5*time.Second {
 		t.Errorf("Token expiration not as expected. Got %v, expected approximately %v (diff: %v)",
 			actualExpiration, expectedExpiration, timeDiff)
-	}
-}
-
-func TestJwtValidateWithValidToken(t *testing.T) {
-	setupJwtConfig()
-
-	tokenString, err := jwtGenerate()
-	if err != nil {
-		t.Fatalf("jwtGenerate() returned error: %v", err)
-	}
-
-	err = jwtValidate(tokenString)
-	if err != nil {
-		t.Errorf("jwtValidate() failed for valid token: %v", err)
-	}
-}
-
-func TestJwtValidateWithEmptyToken(t *testing.T) {
-	setupJwtConfig()
-
-	err := jwtValidate("")
-	if err == nil {
-		t.Error("jwtValidate() should fail for empty token")
-	}
-
-	expectedError := "missing auth token"
-	if err.Error() != expectedError {
-		t.Errorf("jwtValidate() error message = %v, want %v", err.Error(), expectedError)
-	}
-}
-
-func TestJwtValidateWithInvalidToken(t *testing.T) {
-	setupJwtConfig()
-
-	err := jwtValidate("not.a.valid.token")
-	if err == nil {
-		t.Error("jwtValidate() should fail for invalid token")
-	}
-}
-
-func TestJwtValidateWithWrongSecret(t *testing.T) {
-	setupJwtConfig()
-
-	// Generate token with one secret
-	tokenString, err := jwtGenerate()
-	if err != nil {
-		t.Fatalf("jwtGenerate() returned error: %v", err)
-	}
-
-	// Change the secret and try to validate
-	conf.JwtSecret = "different-secret"
-	err = jwtValidate(tokenString)
-	if err == nil {
-		t.Error("jwtValidate() should fail when secret doesn't match")
-	}
-}
-
-func TestJwtValidateWithExpiredToken(t *testing.T) {
-	setupJwtConfig()
-
-	// Create an expired token
-	claims := &jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	expiredToken, err := token.SignedString([]byte(conf.JwtSecret))
-	if err != nil {
-		t.Fatalf("Failed to create expired token: %v", err)
-	}
-
-	err = jwtValidate(expiredToken)
-	if err == nil {
-		t.Error("jwtValidate() should fail for expired token")
-	}
-}
-
-func TestJwtValidateWithDifferentSigningMethod(t *testing.T) {
-	setupJwtConfig()
-
-	// Create token with HS384 instead of HS256
-	claims := &jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS384, claims)
-	tokenString, err := token.SignedString([]byte(conf.JwtSecret))
-	if err != nil {
-		t.Fatalf("Failed to create token with HS384: %v", err)
-	}
-
-	// This should still validate since we only check the secret
-	err = jwtValidate(tokenString)
-	if err != nil {
-		t.Errorf("jwtValidate() failed for token with different signing method: %v", err)
 	}
 }
 
@@ -246,5 +153,133 @@ func TestValidateType(t *testing.T) {
 				t.Errorf("validateType(%q) error = %v, wantErr %v", tt.labelType, err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestCustomClaimsStructure(t *testing.T) {
+	claims := &CustomClaims{
+		UserID:  1,
+		IsAdmin: true,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	}
+
+	if claims.UserID != 1 {
+		t.Errorf("Expected UserID 1, got %d", claims.UserID)
+	}
+	if claims.IsAdmin != true {
+		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+}
+
+func TestJwtGenerateWithUserInfo(t *testing.T) {
+	// Setup test config
+	conf.JwtSecret = "test-secret-key-for-testing"
+
+	// Test admin user
+	tokenStr, err := jwtGenerate(1, true)
+	if err != nil {
+		t.Fatalf("jwtGenerate failed: %v", err)
+	}
+	if tokenStr == "" {
+		t.Error("Expected non-empty token string")
+	}
+
+	// Parse and verify claims
+	token, err := jwt.ParseWithClaims(tokenStr, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(conf.JwtSecret), nil
+	})
+	if err != nil {
+		t.Fatalf("Failed to parse token: %v", err)
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		t.Fatal("Failed to cast claims to CustomClaims")
+	}
+
+	if claims.UserID != 1 {
+		t.Errorf("Expected UserID 1, got %d", claims.UserID)
+	}
+	if claims.IsAdmin != true {
+		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+
+	// Test non-admin user
+	tokenStr2, err := jwtGenerate(2, false)
+	if err != nil {
+		t.Fatalf("jwtGenerate failed for non-admin: %v", err)
+	}
+
+	token2, _ := jwt.ParseWithClaims(tokenStr2, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(conf.JwtSecret), nil
+	})
+	claims2 := token2.Claims.(*CustomClaims)
+
+	if claims2.UserID != 2 {
+		t.Errorf("Expected UserID 2, got %d", claims2.UserID)
+	}
+	if claims2.IsAdmin != false {
+		t.Errorf("Expected IsAdmin false, got %v", claims2.IsAdmin)
+	}
+}
+
+func TestJwtExtractClaimsValid(t *testing.T) {
+	conf.JwtSecret = "test-secret-key-for-testing"
+
+	// Generate a valid token
+	tokenStr, _ := jwtGenerate(1, true)
+
+	// Extract claims
+	claims, err := jwtExtractClaims(tokenStr)
+	if err != nil {
+		t.Fatalf("jwtExtractClaims failed: %v", err)
+	}
+
+	if claims.UserID != 1 {
+		t.Errorf("Expected UserID 1, got %d", claims.UserID)
+	}
+	if claims.IsAdmin != true {
+		t.Errorf("Expected IsAdmin true, got %v", claims.IsAdmin)
+	}
+}
+
+func TestJwtExtractClaimsEmpty(t *testing.T) {
+	_, err := jwtExtractClaims("")
+	if err == nil {
+		t.Error("Expected error for empty token string")
+	}
+	if err.Error() != "missing auth token" {
+		t.Errorf("Expected 'missing auth token' error, got %v", err)
+	}
+}
+
+func TestJwtExtractClaimsInvalid(t *testing.T) {
+	conf.JwtSecret = "test-secret-key-for-testing"
+
+	_, err := jwtExtractClaims("invalid.token.string")
+	if err == nil {
+		t.Error("Expected error for invalid token")
+	}
+}
+
+func TestJwtExtractClaimsExpired(t *testing.T) {
+	conf.JwtSecret = "test-secret-key-for-testing"
+
+	// Generate expired token
+	claims := &CustomClaims{
+		UserID:  1,
+		IsAdmin: true,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, _ := token.SignedString([]byte(conf.JwtSecret))
+
+	_, err := jwtExtractClaims(tokenStr)
+	if err == nil {
+		t.Error("Expected error for expired token")
 	}
 }

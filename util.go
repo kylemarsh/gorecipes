@@ -18,6 +18,12 @@ var (
 	ErrTypeValidation = errors.New("type validation failed")
 )
 
+type CustomClaims struct {
+	UserID  int  `json:"user_id"`
+	IsAdmin bool `json:"is_admin"`
+	jwt.RegisteredClaims
+}
+
 func readConfiguration(c *configuration, configFilename string) error {
 	file, err := os.Open(configFilename)
 	if err != nil {
@@ -29,10 +35,15 @@ func readConfiguration(c *configuration, configFilename string) error {
 	return decoder.Decode(&c)
 }
 
-func jwtGenerate() (string, error) {
-
+func jwtGenerate(userID int, isAdmin bool) (string, error) {
 	// 1 month expiration. TODO Decide on final scheme?
-	claims := &jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30))}
+	claims := &CustomClaims{
+		UserID:  userID,
+		IsAdmin: isAdmin,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)),
+		},
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(conf.JwtSecret))
 
@@ -49,16 +60,24 @@ func jwtGenerate() (string, error) {
 	return tokenStr, nil
 }
 
-func jwtValidate(tokenString string) error {
+func jwtExtractClaims(tokenString string) (*CustomClaims, error) {
 	if tokenString == "" {
-		return errors.New("missing auth token")
+		return nil, errors.New("missing auth token")
 	}
 
-	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(conf.JwtSecret), nil
 	})
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token claims")
 }
 
 func hashPassword(password string) (string, error) {

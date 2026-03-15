@@ -4,6 +4,18 @@ import (
 	"testing"
 )
 
+func TestUserStructHasAdministratorField(t *testing.T) {
+	user := User{
+		ID:            1,
+		Username:      "testuser",
+		Administrator: true,
+	}
+
+	if user.Administrator != true {
+		t.Errorf("Expected Administrator to be true, got %v", user.Administrator)
+	}
+}
+
 func TestConnect(t *testing.T) {
 	conf = configuration{
 		Debug:     false,
