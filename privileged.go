@@ -46,6 +46,48 @@ func authRequired(next http.Handler) http.Handler {
 	})
 }
 
+// Admin Middleware. Paths under this router require valid authentication
+// AND admin privileges to access
+func adminRequired(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var header = r.Header.Get("x-access-token")
+		tokenString := strings.TrimSpace(header)
+		if tokenString == "" {
+			msg := "missing auth token"
+			code := http.StatusUnauthorized
+			http.Error(w, msg, code)
+			fmt.Printf("%d: %v\n", code, msg)
+			return
+		}
+
+		claims, err := jwtExtractClaims(tokenString)
+		if err != nil {
+			var msg string
+			var code int
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				msg = "auth token expired; please log in again"
+				code = http.StatusUnauthorized
+			} else {
+				msg = "invalid auth token"
+				code = http.StatusBadRequest
+			}
+			http.Error(w, msg, code)
+			fmt.Printf("%d: %v\n", code, msg)
+			return
+		}
+
+		if !claims.IsAdmin {
+			msg := "admin access required"
+			code := http.StatusForbidden
+			http.Error(w, msg, code)
+			fmt.Printf("%d: %v\n", code, msg)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 //TODO: How can I do something like python decorators to wrap certain methods
 //    in `recipeRequired` or `accessibleToUser` code to minimize duplication?
 

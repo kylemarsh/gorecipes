@@ -1222,3 +1222,117 @@ func TestEditLabelWithType(t *testing.T) {
 		t.Errorf("Test 5: Type should be preserved, got %q", label.Type)
 	}
 }
+
+func TestAdminRequiredWithAdminToken(t *testing.T) {
+	setupAuthConfig()
+
+	tokenStr, err := jwtGenerate(1, true)
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	nextCalled := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := adminRequired(next)
+
+	req := httptest.NewRequest("POST", "/admin/test", nil)
+	req.Header.Set("x-access-token", tokenStr)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if !nextCalled {
+		t.Error("Expected next handler to be called for admin")
+	}
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+}
+
+func TestAdminRequiredWithNonAdminToken(t *testing.T) {
+	setupAuthConfig()
+
+	tokenStr, err := jwtGenerate(2, false)
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	nextCalled := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := adminRequired(next)
+
+	req := httptest.NewRequest("POST", "/admin/test", nil)
+	req.Header.Set("x-access-token", tokenStr)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if nextCalled {
+		t.Error("Expected next handler not to be called for non-admin")
+	}
+	if w.Code != http.StatusForbidden {
+		t.Errorf("Expected status 403, got %d", w.Code)
+	}
+	body := w.Body.String()
+	expected := "admin access required\n"
+	if body != expected {
+		t.Errorf("Expected %q, got %q", expected, body)
+	}
+}
+
+func TestAdminRequiredWithMissingToken(t *testing.T) {
+	setupAuthConfig()
+
+	nextCalled := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := adminRequired(next)
+
+	req := httptest.NewRequest("POST", "/admin/test", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if nextCalled {
+		t.Error("Expected next handler not to be called")
+	}
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", w.Code)
+	}
+}
+
+func TestAdminRequiredWithInvalidToken(t *testing.T) {
+	setupAuthConfig()
+
+	nextCalled := false
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := adminRequired(next)
+
+	req := httptest.NewRequest("POST", "/admin/test", nil)
+	req.Header.Set("x-access-token", "invalid.token.string")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if nextCalled {
+		t.Error("Expected next handler not to be called")
+	}
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", w.Code)
+	}
+}
