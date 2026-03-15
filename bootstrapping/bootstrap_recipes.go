@@ -74,9 +74,9 @@ func bootstrap() {
 		"user": {
 			"filename":       dir + "users.csv",
 			"drop":           "DROP TABLE IF EXISTS user",
-			"create_mysql":   "CREATE TABLE `user` ( `user_id` bigint(20) NOT NULL AUTO_INCREMENT, `username` varchar(63) NOT NULL, `password` varchar(255), `plaintext_pw_bootstrapping_only` varchar(255) NOT NULL, PRIMARY KEY (`user_id`), KEY `username` (`username`))",
-			"create_sqlite3": "CREATE TABLE `user` ( `user_id` INTEGER PRIMARY KEY, `username` varchar(63) NOT NULL, `password` varchar(255), `plaintext_pw_bootstrapping_only` varchar(255) NOT NULL)",
-			"insert":         "INSERT INTO user (user_id, username, password, plaintext_pw_bootstrapping_only) VALUES (?, ?, ?, ?)",
+			"create_mysql":   "CREATE TABLE `user` ( `user_id` bigint(20) NOT NULL AUTO_INCREMENT, `username` varchar(63) NOT NULL, `password` varchar(255), `plaintext_pw_bootstrapping_only` varchar(255) NOT NULL, `administrator` BOOLEAN NOT NULL DEFAULT 0, PRIMARY KEY (`user_id`), KEY `username` (`username`))",
+			"create_sqlite3": "CREATE TABLE `user` ( `user_id` INTEGER PRIMARY KEY, `username` varchar(63) NOT NULL, `password` varchar(255), `plaintext_pw_bootstrapping_only` varchar(255) NOT NULL, `administrator` BOOLEAN NOT NULL DEFAULT 0)",
+			"insert":         "INSERT INTO user (user_id, username, password, plaintext_pw_bootstrapping_only, administrator) VALUES (?, ?, ?, ?, ?)",
 		},
 	}
 	tx, err := conn.Begin()
