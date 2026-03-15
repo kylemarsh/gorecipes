@@ -58,7 +58,7 @@ func login(w http.ResponseWriter, r *http.Request) *appError {
 		return &appError{http.StatusForbidden, "login invalid", err}
 	}
 
-	tokenStr, err := jwtGenerate(0, false)
+	tokenStr, err := jwtGenerate(user.ID, user.Administrator)
 	if err != nil {
 		return &appError{http.StatusInternalServerError, "could not sign token", err}
 	}
