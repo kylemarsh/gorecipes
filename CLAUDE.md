@@ -82,6 +82,9 @@ A `User` has the following attributes:
  - `HashedPassword` (`password` in the db): hash of the user's password
  - `PlaintextPassword` (`plaintext_pw_bootstrapping_only` in the db): the
    user's password in plain text. Only used for bootstrapping development db
+ - `Administrator` (`administrator` in the db): boolean flag indicating whether
+   this user has administrative privileges. Only administrators can create,
+   modify, or delete recipes, labels, and notes
 
 ## Recipe
 A `Recipe` has the following attributes:
@@ -131,12 +134,14 @@ A `Note` has the following attributes:
  be flagged to indicate that the recipe was actually updated with its contents.
 
 # Routing
-The main class defines three routers:
+The main class defines four routers:
  - `router` handles unauthenticated requests - logging in, fetching recipe
    titles and labels
- - `privRouter` handles requests requiring authenticatin - fetching recipe
-   details, adding/editing/deleting records, and marking recipes as new/cooked.
- - `debugRouter` handles special debugging requests and is only accesible when
+ - `privRouter` handles read-only requests requiring authentication - fetching
+   recipe details, notes, and user-specific data
+ - `adminRouter` handles mutating requests requiring administrative privilege
+   - creating, updating, and deleting recipes, labels, and notes
+ - `debugRouter` handles special debugging requests and is only accessible when
    the server is running with the `debug` configuration equal to `true`
 
 The routers are `mux` routers from `github.com/gorilla/mux` and routes are set
@@ -147,8 +152,11 @@ up by calling `Handle` on the router:
  - Handle can be chained with `Method` which is passed the HTTP methods allowed
    for this route.
 
-The `privRouter` and `debugRouter` use the `authRequired` and `debugRequired`
-middlewares, respectively, to enforce protections around their routes.
+The `privRouter` uses the `authRequired` middleware to verify the user has a
+valid JWT token. The `adminRouter` uses both `authRequired` and `adminRequired`
+middlewares to verify the user is authenticated and has administrative
+privileges. The `debugRouter` uses the `debugRequired` middleware to enforce
+protections around its routes.
 
 ## Recipe New Flag Routes
 The `privRouter` includes two routes for managing the `new` flag on recipes:
@@ -162,6 +170,35 @@ The `privRouter` includes two routes for managing the `new` flag on recipes:
 Both handlers validate the recipe ID, verify the recipe exists (returning 404
 if not), and call `setRecipeNewFlag()` in `model.go` to update the database.
 They follow the same pattern as `flagNote()`/`unFlagNote()` for consistency.
+
+# JWT Authentication
+Authentication uses JSON Web Tokens (JWT) signed with a shared secret (`JwtSecret`
+in the configuration). The JWT contains custom claims with user information
+needed for stateless authorization.
+
+## JWT Claims
+The custom claims embedded in each JWT token include:
+ - `user_id`: The numeric identifier of the authenticated user
+ - `is_admin`: Boolean flag indicating whether the user has administrative
+   privileges
+ - Standard JWT claims (`exp` for expiration, `iat` for issued-at time)
+
+When a user logs in successfully via `POST /login`, the server issues a JWT
+token containing these claims. The client includes this token in subsequent
+requests using the `x-access-token` header.
+
+## Authorization Model
+The authorization model is based on user roles:
+ - **Unauthenticated users** can access public routes (`/recipes/`, `/labels/`,
+   `/recipe/{id}/labels/`) to search recipes and labels
+ - **Authenticated users** (any user with a valid JWT) can access `/priv/*`
+   routes to read detailed recipe and note information
+ - **Administrative users** (users with `is_admin=true` in their JWT) can access
+   `/admin/*` routes to create, modify, and delete recipes, labels, and notes
+
+The `authRequired` middleware validates the JWT signature and extracts claims
+to verify the user is authenticated. The `adminRequired` middleware checks the
+`is_admin` claim to enforce administrative-only access to mutating operations.
 
 # Development
 Use the instructions in README.md to launch a devlopment server for testing
