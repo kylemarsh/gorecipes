@@ -27,10 +27,7 @@ func authRequired(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(conf.JwtSecret), nil
-		})
-
+		_, err := jwtExtractClaims(tokenString)
 		if err != nil {
 			var msg string
 			var code int
