@@ -221,7 +221,8 @@ See TODO.md for descriptions of features to be added
  - NEVER merge feature branches in to `main`
  - NEVER push to the remote repository
 
-Use the "superpowers" plugin to guide you through making changes to this
+Use the "superpowers" plugin's brainstorming and debugging skills, but do not
+use its implementation skillsto guide you through making changes to this
 codebase.
 
 Keep the following in mind when making changes:
