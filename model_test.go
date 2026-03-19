@@ -50,13 +50,13 @@ func TestBootstrap(t *testing.T) {
 
 	checkDb(t, 0, 0, 0)
 	bootstrap(false)
-	checkDb(t, 46, 13, 32)
+	checkDb(t, 46, 20, 71)
 
 	db.Exec("insert into label values (50, 'florp', '', '')")
 	bootstrap(false)
-	checkDb(t, 47, 13, 32)
+	checkDb(t, 47, 20, 71)
 	bootstrap(true)
-	checkDb(t, 46, 13, 32)
+	checkDb(t, 46, 20, 71)
 }
 
 func TestSetRecipeNewFlag(t *testing.T) {
