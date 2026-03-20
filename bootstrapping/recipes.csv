@@ -8,7 +8,93 @@
 "7";"Vanilla Cake";"Cream butter and sugar. Add eggs, vanilla. Mix in flour. Bake 30 minutes.";50;30;0;1
 "8";"Strawberry Ice Cream";"Heat cream and sugar. Cool. Add strawberries. Churn in ice cream maker.";180;20;0;0
 "9";"Apple Pie";"Make pie crust. Slice apples, toss with sugar and cinnamon. Fill crust, bake 50 minutes.";90;40;0;0
-"10";"Steamed Pork Buns";"Marinate pork strips in honey, oyster sauce, hoisin, soy, rice wine, five spice. Chill overnight. Roast at 450 for 30-40 minutes, basting frequently. Broil 2 minutes until charred. Make sauce with broth, oyster sauce, ketchup, sugar, cornstarch. Stir fry onion, add chopped pork, wine, and sauce. For dough: mix flour, sugar, baking powder, milk, oil. Knead 12 minutes, rest 1 hour. Divide into 16 balls, shape into cups, fill with pork mixture. Steam 15-20 minutes.";0;0;0;0
+"10";"Steamed Pork Buns";"Ingredients
+=========
+
+Char Siu Pork Filling
+-----------------------
+- 1 lb pork strips (shoulder or butt)
+- 2 T honey
+- 2 T oyster sauce
+- 2 T hoisin sauce
+- 2 T soy sauce
+- 2 T rice wine
+- 1 t Chinese five spice powder
+
+Sauce
+------
+- 1/2 C chicken broth
+- 1 T oyster sauce
+- 1 T ketchup
+- 1 T sugar
+- 1 t cornstarch
+- 1 small onion, diced
+- 1 T rice wine
+
+Dough
+------
+- 3 C all-purpose flour
+- 1/4 C sugar
+- 1 T baking powder
+- 1 C milk
+- 2 T vegetable oil
+
+Equipment
+=========
+- Large bowl or zip-top bag (for marinating)
+- Baking sheet with wire rack
+- Small saucepan
+- Wok or large skillet
+- Large mixing bowl
+- Steamer basket or bamboo steamer
+- Rolling pin
+
+Instructions
+============
+
+Char Siu Pork (day before)
+----------------------------
+1. Combine pork strips with honey, oyster sauce, hoisin sauce, soy sauce, rice wine, and five spice in bowl or bag
+2. Marinate in refrigerator overnight
+
+Char Siu Pork (cooking day)
+-----------------------------
+3. Preheat oven to 450°F
+4. Place marinated pork on wire rack over baking sheet
+5. Roast for 30-40 minutes, basting with marinade frequently
+6. Broil for final 2 minutes until edges are charred
+7. Remove from oven and let cool, then chop into small pieces
+
+Sauce
+------
+8. In small saucepan, combine broth, oyster sauce, ketchup, sugar, and cornstarch
+9. Whisk together and set aside
+
+Filling
+--------
+10. Heat wok or skillet over high heat
+11. Stir fry diced onion until softened (~2 minutes)
+12. Add chopped pork and rice wine
+13. Add sauce mixture and stir until thickened
+14. Remove from heat and let cool
+
+Dough
+------
+15. In large mixing bowl, combine flour, sugar, and baking powder
+16. Add milk and oil
+17. Knead for 12 minutes until smooth and elastic
+18. Cover and let rest for 1 hour
+
+Assembly
+---------
+19. Divide dough into 16 equal balls
+20. Roll each ball flat, then shape edges to form a cup/pocket
+21. Place 1-2 tablespoons filling in center of each dough cup
+22. Gather edges and pinch to seal, creating a bun
+23. Place buns on squares of parchment paper in steamer basket
+24. Steam for 15-20 minutes until dough is cooked through and fluffy
+
+Serve hot.";0;0;0;0
 "11";"Margarita";"Mix tequila, lime juice, triple sec. Serve over ice.";0;0;0;0
 "12";"Green Smoothie";"Blend spinach, banana, almond milk.";0;0;0;1
 "13";"Guacamole";"Mash avocados. Mix in lime, cilantro, onion, tomato.";10;10;1;0
