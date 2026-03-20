@@ -65,9 +65,9 @@ func main() {
 	adminRouter.Handle("/recipe/{recipe_id}/label/{label_id}", wrappedHandler(untagRecipe)).Methods("DELETE")
 
 	// Label routes
-	adminRouter.Handle("/label/{label_name}", wrappedHandler(addLabel)).Methods("PUT")
 	adminRouter.Handle("/label/id/{label_id}", wrappedHandler(editLabel)).Methods("PUT")
 	adminRouter.Handle("/label/id/{label_id}", wrappedHandler(removeLabel)).Methods("DELETE")
+	adminRouter.Handle("/label/{label_name}", wrappedHandler(addLabel)).Methods("PUT")
 
 	// Note routes
 	adminRouter.Handle("/recipe/{id}/note/", wrappedHandler(createNoteOnRecipe)).Methods("POST")
