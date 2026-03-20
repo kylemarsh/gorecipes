@@ -1336,3 +1336,174 @@ func TestAdminRequiredWithInvalidToken(t *testing.T) {
 		t.Errorf("Expected status 400, got %d", w.Code)
 	}
 }
+
+func TestRemoveLabelSuccess(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create a label to delete
+	_, err := db.Exec("INSERT INTO label (label_id, label, icon, type) VALUES (999, 'testlabel', '🧪', 'test')")
+	if err != nil {
+		t.Fatalf("Failed to create test label: %v", err)
+	}
+
+	// Verify label exists
+	_, err = labelByID(999)
+	if err != nil {
+		t.Fatalf("Test label should exist before deletion: %v", err)
+	}
+
+	// Create request to delete label
+	req := httptest.NewRequest("DELETE", "/admin/label/id/999", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "999"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	appErr := removeLabel(rr, req)
+
+	// Check no error returned
+	if appErr != nil {
+		t.Errorf("removeLabel() returned appError: %v", appErr)
+	}
+
+	// Check status code
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("removeLabel() returned wrong status: got %v want %v", status, http.StatusNoContent)
+	}
+
+	// Verify label is deleted
+	_, err = labelByID(999)
+	if err == nil {
+		t.Error("Label should not exist after deletion")
+	}
+}
+
+func TestRemoveLabelWithRecipes(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Label 1 (chicken) has recipes linked to it
+	var recipeLinkCount int
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label WHERE label_id = 1").Scan(&recipeLinkCount)
+	if recipeLinkCount == 0 {
+		t.Skip("Test requires label 1 to have linked recipes in bootstrap data")
+	}
+
+	// Create request to delete label
+	req := httptest.NewRequest("DELETE", "/admin/label/id/1", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "1"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	appErr := removeLabel(rr, req)
+
+	// Check no error returned
+	if appErr != nil {
+		t.Errorf("removeLabel() with recipes returned appError: %v", appErr)
+	}
+
+	// Check status code
+	if status := rr.Code; status != http.StatusNoContent {
+		t.Errorf("removeLabel() returned wrong status: got %v want %v", status, http.StatusNoContent)
+	}
+
+	// Verify label is deleted
+	_, err := labelByID(1)
+	if err == nil {
+		t.Error("Label should not exist after deletion")
+	}
+
+	// Verify all recipe links are removed
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label WHERE label_id = 1").Scan(&recipeLinkCount)
+	if recipeLinkCount != 0 {
+		t.Errorf("All recipe links should be removed, found %d", recipeLinkCount)
+	}
+}
+
+func TestRemoveLabelNotFound(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create request to delete non-existent label
+	req := httptest.NewRequest("DELETE", "/admin/label/id/9999", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "9999"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	appErr := removeLabel(rr, req)
+
+	// Check error returned
+	if appErr == nil {
+		t.Error("removeLabel() with non-existent label should return appError")
+	}
+
+	if appErr != nil && appErr.Code != http.StatusNotFound {
+		t.Errorf("removeLabel() with non-existent label returned wrong code: got %v want %v", appErr.Code, http.StatusNotFound)
+	}
+}
+
+func TestRemoveLabelInvalidID(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Create request with non-integer ID
+	req := httptest.NewRequest("DELETE", "/admin/label/id/abc", nil)
+	req = mux.SetURLVars(req, map[string]string{"label_id": "abc"})
+	rr := httptest.NewRecorder()
+
+	// Call handler
+	appErr := removeLabel(rr, req)
+
+	// Check error returned
+	if appErr == nil {
+		t.Error("removeLabel() with invalid ID should return appError")
+	}
+
+	if appErr != nil && appErr.Code != http.StatusBadRequest {
+		t.Errorf("removeLabel() with invalid ID returned wrong code: got %v want %v", appErr.Code, http.StatusBadRequest)
+	}
+}

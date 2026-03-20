@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"testing"
 )
 
@@ -295,6 +297,103 @@ func TestUpdateLabelWithType(t *testing.T) {
 	err = updateLabel(1, "chicken", "🐓", "123456789012345678901")
 	if err == nil {
 		t.Error("Expected error for type too long, got nil")
+	}
+}
+
+func TestDeleteLabel(t *testing.T) {
+	conf = configuration{
+		Debug:     false,
+		DbDialect: "sqlite3",
+		DbDSN:     ":memory:",
+		JwtSecret: "secret",
+	}
+
+	if db != nil {
+		db.Close()
+		db = nil
+	}
+	connect()
+	bootstrap(true)
+
+	// Test 1: Delete a label with no recipes linked
+	// Create a new label that won't have any recipes
+	_, err := db.Exec("INSERT INTO label (label_id, label, icon, type) VALUES (999, 'testlabel', '🧪', 'test')")
+	if err != nil {
+		t.Fatalf("Failed to create test label: %v", err)
+	}
+
+	err = deleteLabel(999)
+	if err != nil {
+		t.Errorf("deleteLabel(999) with no recipes failed: %v", err)
+	}
+
+	// Verify label is gone
+	_, err = labelByID(999)
+	if err == nil {
+		t.Error("Label 999 should not exist after deletion")
+	}
+
+	// Test 2: Delete a label with recipes linked
+	// Label ID 1 (chicken) should have recipes linked to it
+	var recipeLinkCount int
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label WHERE label_id = 1").Scan(&recipeLinkCount)
+	if recipeLinkCount == 0 {
+		t.Skip("Test requires label 1 to have linked recipes in bootstrap data")
+	}
+
+	initialRecipeLinkCount := recipeLinkCount
+	err = deleteLabel(1)
+	if err != nil {
+		t.Errorf("deleteLabel(1) with recipes failed: %v", err)
+	}
+
+	// Verify label is gone
+	_, err = labelByID(1)
+	if err == nil {
+		t.Error("Label 1 should not exist after deletion")
+	}
+
+	// Verify all recipe links are gone
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label WHERE label_id = 1").Scan(&recipeLinkCount)
+	if recipeLinkCount != 0 {
+		t.Errorf("Expected 0 recipe links for label 1, got %d", recipeLinkCount)
+	}
+
+	t.Logf("Successfully deleted label with %d recipe links", initialRecipeLinkCount)
+
+	// Test 3: Delete non-existent label
+	err = deleteLabel(9999)
+	if err == nil {
+		t.Error("deleteLabel(9999) should return error for non-existent label")
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("Expected sql.ErrNoRows, got %v", err)
+	}
+
+	// Test 4: Verify transaction atomicity by checking total counts
+	// Get initial counts
+	var labelCount, recipeLabelCount int
+	db.QueryRow("SELECT COUNT(*) FROM label").Scan(&labelCount)
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label").Scan(&recipeLabelCount)
+
+	// Delete another label
+	err = deleteLabel(2) // beef label
+	if err != nil {
+		t.Fatalf("Failed to delete label 2: %v", err)
+	}
+
+	// Check counts decreased appropriately
+	var newLabelCount, newRecipeLabelCount int
+	db.QueryRow("SELECT COUNT(*) FROM label").Scan(&newLabelCount)
+	db.QueryRow("SELECT COUNT(*) FROM recipe_label").Scan(&newRecipeLabelCount)
+
+	if newLabelCount != labelCount-1 {
+		t.Errorf("Expected label count to decrease by 1, was %d now %d", labelCount, newLabelCount)
+	}
+
+	// Recipe label count should decrease (by at least 0, possibly more)
+	if newRecipeLabelCount > recipeLabelCount {
+		t.Errorf("Recipe label count should not increase, was %d now %d", recipeLabelCount, newRecipeLabelCount)
 	}
 }
 

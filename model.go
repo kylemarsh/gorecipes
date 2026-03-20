@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ type User struct {
 	Username          string
 	HashedPassword    string `db:"password"`
 	PlaintextPassword string `db:"plaintext_pw_bootstrapping_only"`
-	Administrator     bool `db:"administrator"`
+	Administrator     bool   `db:"administrator"`
 }
 
 /*Recipe - basic unit of the recipe database */
@@ -332,6 +333,54 @@ func deleteRecipeLabel(recipeID int, labelID int) error {
 		fmt.Printf("unlinked label %d from recipe %d\n", labelID, recipeID)
 	}
 	return err
+}
+
+func deleteLabel(labelID int) error {
+	connect()
+
+	// Start transaction for atomic deletion
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Ensure transaction is always closed
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// First unlink all recipes
+	_, err = tx.Exec("DELETE FROM recipe_label WHERE label_id = ?", labelID)
+	if err != nil {
+		return err
+	}
+
+	// Then delete the label itself
+	result, err := tx.Exec("DELETE FROM label WHERE label_id = ?", labelID)
+	if err != nil {
+		return err
+	}
+
+	// Check if label existed
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		err = sql.ErrNoRows
+		return err
+	}
+
+	// Commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("deleted label %d and unlinked all recipes\n", labelID)
+	return nil
 }
 
 // MISC //
