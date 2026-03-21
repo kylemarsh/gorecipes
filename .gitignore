@@ -8,7 +8,9 @@
 # Folders
 _obj
 _test
+backups
 .worktrees
+.claude
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -25,3 +27,4 @@ _testmain.go
 *.exe
 *.test
 *.prof
+gorecipes
